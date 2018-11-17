@@ -9,7 +9,7 @@
 // ==/UserScript==
 
 (main => {
-  'use strict';
+  'use strict'
   let attempts = 1000 / 250 * 15
   let clear = setInterval(() => {
     if (attempts-- <= 0) {
@@ -806,4 +806,10 @@
   onresize()
   loop()
 })
+
+
+
+
+
+
 

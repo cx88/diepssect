@@ -4,6 +4,8 @@ This a public repo for hacky diep stuff, including networking protocol, WebAssem
 
 ## Protocol
 
+You can find `userscripts/diep-pl.js` and use it in TemperMonkey. Press F12 to view all short cuts, but it include features like Alt+Z to dump log to console.
+
 ### Serverbound Packets
 |  ID  |   Description   |
 |------|-----------------|
