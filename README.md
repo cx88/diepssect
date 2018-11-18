@@ -4,11 +4,23 @@ This a public repo for hacky diep stuff, including networking protocol, WebAssem
 
 ## Contribution
 
-I started worked on this last summer in 2017, with the goal of deciphering the diep.io protocol. Unfortuneately the developer started updating the game for a while, and each time the memory layout and protocol is shuffled. But since now it's been months since the last update now, I'm starting to work on it again.
+I started worked on this last summer in 2017, with the goal of deciphering the diep.io protocol. Unfortuneately the developer started updating the game for a while, and each time the memory layout and protocol is shuffled. But since now it's been months since the last update now, I'm starting to work on it again. If you make any discoveries, pull requests are welcome!
 
 ## Protocol
 
 You can find `userscripts/diep-pl.js` and use it in TemperMonkey. Press F12 to view all short cuts, but it include features like Alt+Z to dump log to console.
+
+### Encodings
+
+Although data is represented in many ways, there are only four core encodings. Floats are always 4 bytes, where as the rest is variable and have at least 1 byte.
+
+|   Name   |        Description         |
+|----------|----------------------------|
+| Float    | A floating point number    |
+| Varint   | A signed 32 bit integer    |
+| Varuint  | An unsigned 32 bit integer |
+| Varfloat | A float casted to a varint |
+| String   | A null terminated string   |
 
 ### Serverbound Packets
 |  ID  |   Description   |

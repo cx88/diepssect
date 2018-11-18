@@ -2,7 +2,7 @@
 // @name         Exporter
 // @namespace    *://diep.io/
 // @version      0.1
-// @description  A simple hex editor.
+// @description  A simple script that exports important variables in wasm.js.
 // @author       CX
 // @match        *://diep.io/
 // @grant        none
