@@ -4,7 +4,7 @@ This a public repo for hacky diep stuff, including networking protocol, WebAssem
 
 ## Contribution
 
-I started worked on this last summer in 2017, with the goal of deciphering the diep.io protocol. Unfortuneately the developer started updating the game for a while, and each time the memory layout and protocol is shuffled. But since now it's been months since the last update now, I'm starting to work on it again. If you make any discoveries, pull requests are welcome!
+I started working on this last summer in 2017, with the goal of deciphering the diep.io protocol. Unfortuneately the developer started updating the game for a while, and each time the memory layout and protocol is shuffled. But since now it's been months since the last update now, I'm starting to work on it again. If you make any discoveries, pull requests are welcome!
 
 ## Protocol
 
