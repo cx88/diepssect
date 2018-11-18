@@ -2,6 +2,10 @@
 
 This a public repo for hacky diep stuff, including networking protocol, WebAssembly, memory editing, & physics.
 
+## Contribution
+
+I started worked on this last summer in 2017, with the goal of deciphering the diep.io protocol. Unfortuneately the developer started updating the game for a while, and each time the memory layout and protocol is shuffled. But since now it's been months since the last update now, I'm starting to work on it again.
+
 ## Protocol
 
 You can find `userscripts/diep-pl.js` and use it in TemperMonkey. Press F12 to view all short cuts, but it include features like Alt+Z to dump log to console.
@@ -37,9 +41,10 @@ You can find `userscripts/diep-pl.js` and use it in TemperMonkey. Press F12 to v
 
 ### Other Repos
 
+Here are some repos about the protocol. Unfortunately, most of the information there especially about the details of the `00` packet is either outdated or incorrect.
 - https://github.com/firebolt55439/Diep.io-Protocol
 - https://github.com/FlorianCassayre/diep.io-protocol
 
 ## Memory editing
 
-You can find `userscripts/hexedit.js` and use it in TemperMonkey. Note that it **MUST** be paired with `userscripts/exporter.js` in order to work.
+You can find `userscripts/hexedit.js` and use it in TemperMonkey. Note that it **MUST** be paired with `userscripts/exporter.js` in order to work. Six vectors with static memory addresses have been included, and you can find their information in the comments.
