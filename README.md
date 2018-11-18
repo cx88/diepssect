@@ -22,34 +22,36 @@ Although data is represented in many ways, there are only four core encodings. F
 | Varfloat | A float casted to a varint |
 | String   | A null terminated string   |
 
+Many packets are already completely deciphered. Some packet types have a known structure, but contain tables or mappings that are unknown and possible to figure out through manual trial-and-error. A few are completely unknown and deemed impossible without reverse engineering.
+
 ### Serverbound Packets
-|  ID  |   Description   |
-|------|-----------------|
-| `00` | init            |
-| `01` | input           |
-| `02` | spawn           |
-| `03` | upgrade build   |
-| `04` | upgrade tank    |
-| `05` | echo            |
-| `06` |                 |
-| `07` | extension found |
-| `08` | clear death     |
-| `09` | take tank       |
+|  ID  |   Description   |   Status   |
+|------|-----------------|------------|
+| `00` | init            | Done       |
+| `01` | input           | Done       |
+| `02` | spawn           | Done       |
+| `03` | upgrade build   | Done       |
+| `04` | upgrade tank    | Structured |
+| `05` | echo            | Done       |
+| `06` |                 | Unknown    |
+| `07` | extension found | Structured |
+| `08` | clear death     | Done       |
+| `09` | take tank       | Done       |
 
 ### Clientbound Packets
-|  ID  |    Description    |
-|------|-------------------|
-| `00` | update            |
-| `01` | outdated client   |
-| `02` | compressed update |
-| `03` | message           |
-| `04` | server status     |
-| `05` | echo              |
-| `06` | party link        |
-| `07` | ready             |
-| `08` | achievements      |
-| `09` | invalid link      |
-| `0a` | player count      |
+|  ID  |    Description    |   Status   |
+|------|-------------------|------------|
+| `00` | update            | Structured |
+| `01` | outdated client   | Done       |
+| `02` | compressed update | Unknown    |
+| `03` | message           | Done       |
+| `04` | server status     | Done       |
+| `05` | echo              | Done       |
+| `06` | party link        | Done       |
+| `07` | ready             | Done       |
+| `08` | achievements      | Structured |
+| `09` | invalid link      | Done       |
+| `0a` | player count      | Done       |
 
 ### Other Repos
 

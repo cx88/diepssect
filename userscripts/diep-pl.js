@@ -726,17 +726,18 @@
   loop()
   console.log('Diep Packet Logger - Debugger Hook')
   setTimeout(() => {
-    output(
-      '# Diep Packet Logger\n' +
-      '(R) Record live packets in console\n' +
-      '(G) Download dump\n' +
-      '(Z) Dump log into console\n' +
-      '(X) Pause packet stream\n' +
-      '(Q) Quened packet inspection\n' +
-      '(M) Toggle debug mode\n' +
-      '(B) Toggle sidebar\n' +
+    output([
+      '# Diep Packet Logger',
+      '(R) Record live packets in console',
+      '(G) Download dump',
+      '(Z) Dump log into console',
+      '(X) Pause packet stream',
+      '(Q) Quened packet inspection',
+      '(M) Toggle debug mode',
+      '(B) Toggle sidebar',
       '(V) Videotape for copying',
-      'font-weight:bold')
+      'Note: Press Alt+Key to use the shortcuts.',
+    ].join('\n'), 'font-weight:bold')
   }, 1e3)
   window._ = window.logger = logger
 })()
