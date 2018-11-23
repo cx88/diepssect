@@ -6,6 +6,17 @@ This a public repo for hacky diep stuff, including networking protocol, WebAssem
 
 I started working on this last summer in 2017, with the goal of deciphering the diep.io protocol. Unfortuneately the developer started updating the game for a while, and each time the memory layout and protocol is shuffled. But since now it's been months since the last update now, I'm starting to work on it again. If you make any discoveries, pull requests are welcome!
 
+## Userscripts
+
+- `diep-pl.js` - A diep packer logger, used for deciphering the protocol.
+- `dpma.js` - A WIP script that allows both editing memory and packets.
+- `hexedit.js` - A script that allows memory editing.
+- `injector.js` - A script that inject itself into diep's `build_*.js` for exporting and replacing variables. It's included in `hexedit.js` and `dpma.js`
+- `replacer.js` - A deprecated script that's merged into `injector.js`
+- `exporter.js` - Another deprecated script that's merged into `injector.js`. It used to be required for `hexedit.js` to work.
+
+As of last commit, all of the non-deprecated scripts should be able to run in harmony.
+
 ## Protocol
 
 You can find `userscripts/diep-pl.js` and use it in TemperMonkey. Press F12 to view all short cuts, but it include features like Alt+Z to dump log to console.
@@ -61,4 +72,4 @@ Here are some repos about the protocol. Unfortunately, most of the information t
 
 ## Memory editing
 
-You can find `userscripts/hexedit.js` and use it in TemperMonkey. Note that it **MUST** be paired with `userscripts/exporter.js` in order to work. Six vectors with static memory addresses have been included, and you can find their information in the comments.
+You can find `userscripts/hexedit.js` and use it in TemperMonkey. Six vectors with static memory addresses have been included, and you can find their information in the comments.
