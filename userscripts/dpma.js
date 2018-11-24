@@ -93,10 +93,10 @@ const Canvas = class {
       right: false,
     }
 
-    let getCoordinate = e => {
+    let getCoordinate = (e, to) => {
       let { left, top } = e.target.getBoundingClientRect();
-      to.x = e.clientX - rect.left
-      to.y = e.clientY - rect.top
+      to.x = e.clientX - left
+      to.y = e.clientY - top
       to.dx = e.movementX
       to.dy = e.movementY
     }
@@ -180,40 +180,96 @@ const Canvas = class {
 
 const Component = class {
   constructor(parent) {
-    this.parent = parent || null
+    this.parent = [parent, ...parent.parent]
   }
   render(c, x, y, width, height) {}
 }
 
 const ComponentTable = class extends Component {
-  constructor(parent) {
+  constructor(parent, horizontal = false) {
     super(parent)
 
+    this.horizontal = horizontal
     this.children = []
     this.draggable = false
   }
   render(c, x, y, width, height) {
-
+    this.normalizeChildrenSizes()
+    let start = 0
+    for (let { size, child } of this.children) {
+      if (this.horizontal)
+        child.render(c, y + start * width, y, size * width, height)
+      else
+        child.render(c, x, y + start * height, width, size * height)
+      start += size
+    }
   }
-  createChild(child) {
-    this.children.push(createChild)
+  createChild(Class, ...args) {
+    let child = new Class(this, ...args)
+    this.children.push({ child, size: this.children.length ? 1 / this.children.length : 1 })
+    return child
+  }
+  normalizeChildrenSizes() {
+    let totalSize = 0
+    for (let { size } of this.children) {
+      totalSize += size
+    }
+    if (totalSize !== 1)
+      for (let element of this.children) {
+        element.size = element.size / totalSize
+      }
+  }
+}
+
+const Console = class extends Component {
+  constructor(parent) {
+    super(parent)
+  }
+  render(c, x, y, width, height) {
+    c.fill('#000000')
+    c.rect(x, y, width, height)
+    c.fill('#ffffff')
+    c.rect(x + 2, y + 2, width - 4, height - 4)
   }
 }
 
 const Application = class extends ComponentTable {
   constructor() {
-    super()
-
+    super({ parent: [] })
   }
   async init() {
-    this.specials = await Injector.export()
+    this.exports = await Injector.export()
 
-    let loop = () => {
-      this.render()
-      requestAnimationFrame(loop)
+    this.width = 200
+    window.canvas.style.width = window.canvas.style.right = 'auto'
+    window.onresize = () => {
+      window.canvas.height = window.innerHeight
+      window.canvas.width = window.innerWidth - this.width
     }
-    loop()
+    window.onresize()
+
+    let canvas = document.body.appendChild(document.createElement('canvas'))
+    canvas.style.position = 'absolute'
+    canvas.style.right =
+    canvas.style.top =
+    canvas.style.bottom =
+      '0'
+    canvas.style.height = '100%'
+    canvas.style.width = 'auto'
+    this.canvas = new Canvas(canvas)
+
+    this.console = this.createChild(Console)
+
+    this.loop()
+  }
+  loop() {
+    this.canvas.size(this.width, window.innerHeight)
+    this.render(this.canvas, 0, 0, this.width, window.innerHeight)
+    requestAnimationFrame(() => this.loop())
   }
 }
 
+
+console.log(`[DPMA] Starting...`)
 new Application().init()
+console.log(`[DPMA] Started!`)
