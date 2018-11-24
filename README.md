@@ -70,6 +70,10 @@ Here are some repos about the protocol. Unfortunately, most of the information t
 - https://github.com/firebolt55439/Diep.io-Protocol
 - https://github.com/FlorianCassayre/diep.io-protocol
 
+## WebAssembly
+
+Diep.io uses [Emscripten](https://github.com/kripken/emscripten) with [WebAssembly](https://webassembly.org/). This means that unlike most .io games, diep is written not in JavaScript but rather C++. This means that the code cannot be easily read, and will be difficult to comprehend even when disassembled.
+
 ## Memory editing
 
 You can find `userscripts/hexedit.js` and use it in TemperMonkey. Six vectors with static memory addresses have been included, and you can find their information in the comments.

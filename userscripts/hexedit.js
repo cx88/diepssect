@@ -8,56 +8,67 @@
 // @grant        none
 // ==/UserScript==
 
-const Injector = window.Injector = window.Injector || {
-  replaced: [],
-  replacedWith: [],
-  firstReplacement: true,
-  replace(object, to) {
-    if (this.firstReplacement) {
-      this.firstReplacement = false
-      this.replace(Function.prototype, function toString() {
-        let index = Injector.replacedWith.indexOf(this)
-        return this._toString.call(index === -1 ? this : Injector.replaced[index])
-      })
+const Injector = window.Injector = window.Injector || (() => {
+  let exports = null
+  let exportPromise = new Promise(resolve => {
+    window.__injectCall = result => {
+      exports = result
+      resolve(result)
     }
+  })
 
+  let appender = `;__injectCall({${
+    ['Module', 'cp5', 'Runtime', 'Browser', 'ASM_CONSTS']
+      .map(r => 'r: typeof r !== "undefined" && r'.replace(/r/g, r))
+      .join(',')
+  }})`
+
+  let replaced = []
+  let replacedWith = []
+
+  let replace = (object, to) => {
     let { name } = to
-    this.replaced.push(object[name])
-    this.replacedWith.push(to)
+    replaced.push(object[name])
+    replacedWith.push(to)
     object['_' + name] = object[name]
     object[name] = to
-  },
-  exports: ['Module', 'cp5', 'Runtime', 'Browser', 'ASM_CONSTS'],
-  exportPromise: false,
-  export() {
-    let appender = `;window.injectCall({${
-      this.exports.map(r => 'r: typeof r !== "undefined" && r'.replace(/r/g, r)).join(',')
-    }})`
+  }
 
-    if (!this.exportPromise) {
-      this.exportPromise = new Promise(resolve => window.injectCall = resolve)
-      this.replace(document, function getElementById(id) {
-        if (id !== 'textInput')
-          return this._getElementById(id)
-        this.getElementById = this._getElementById
+  replace(Function.prototype, function toString() {
+    let index = replacedWith.indexOf(this)
+    return this._toString.call(index === -1 ? this : replaced[index])
+  })
 
-        fetch(document.getElementsByTagName('script')[0].src)
-          .then(r => r.text())
-          .then(r => r.replace(/}\)\)\(window\)\s*$/, to => appender + to))
-          .then(eval)
+  replace(document, function getElementById(id) {
+    if (id !== 'textInput')
+      return this._getElementById(id)
+    this.getElementById = this._getElementById
 
-        throw new Error('Disabling default source')
-      })
-    }
+    fetch(document.getElementsByTagName('script')[0].src)
+      .then(r => r.text())
+      .then(r => r.replace(/}\)\)\(window\)\s*$/, to => appender + to))
+      .then(eval)
 
-    return this.exportPromise
-  },
-}
+    throw new Error('Disabling default source')
+  })
+
+  return {
+    get exports() {
+      if (!exports)
+        throw new Error('Exports are not yet ready!')
+      return exports
+    },
+    getExports() {
+      return exportPromise
+    },
+    replace,
+  }
+})()
 
 ;(async main => {
   'use strict'
   console.log(`[HexEdit] Injecting to get a buffer...`)
-  let { Module } = await Injector.export()
+  let { Module } = await Injector.getExports()
   main(Module.buffer)
   console.log(`[HexEdit] Initialized editor with buffer of ${ Module.buffer.byteLength } bytes!`)
 
