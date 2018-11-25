@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Diep Packet & Memory Analyzer
-// @namespace    *://diep.io/
-// @version      0.1
 // @description  Like a combination of WireShark and Cheat Engine but for WebSockets and WebAssembly memory segments
+// @version      0.1
 // @author       CX
+// @namespace    *://diep.io/
 // @match        *://diep.io/
 // @grant        none
+// @run-at       document-start
 // ==/UserScript==
 
 const Injector = window.Injector = window.Injector || (() => {

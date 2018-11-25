@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         HexEdit
-// @namespace    *://diep.io/
-// @version      0.1
 // @description  A simple hex editor.
+// @version      0.1
 // @author       CX
+// @namespace    *://diep.io/
 // @match        *://diep.io/
 // @grant        none
+// @run-at       document-start
 // ==/UserScript==
 
 const Injector = window.Injector = window.Injector || (() => {

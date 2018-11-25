@@ -8,14 +8,15 @@ I started working on this last summer in 2017, with the goal of deciphering the 
 
 ## Userscripts
 
-- `diep-pl.js` - A diep packer logger, used for deciphering the protocol.
-- `dpma.js` - A WIP script that allows both editing memory and packets.
-- `hexedit.js` - A script that allows memory editing.
-- `injector.js` - A script that inject itself into diep's `build_*.js` for exporting and replacing variables. It's included in `hexedit.js` and `dpma.js`
+All of the non-deprecated scripts are found in the `userscripts` folder, but you can also install them by just clicking. They all should be able to run in harmony, with the exception of `dpma.js`, which should not be combined with `hexedit.js` or `diep-pl.js`.
+
+- [`Diep-pl.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/diep-pl.user.js) - A diep packer logger, used for deciphering the protocol.
+- [`dpma.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/dpma.user.js) - A WIP script that allows both editing memory and packets.
+- [`hexedit.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/hexedit.user.js) - A script that allows memory editing.
+- [`injector.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/injector.user.js) - A script that inject itself into diep's `build_*.js` for exporting and replacing variables. It's included in `hexedit.js` and `dpma.js`
 - `replacer.js` - A deprecated script that's merged into `injector.js`
 - `exporter.js` - Another deprecated script that's merged into `injector.js`. It used to be required for `hexedit.js` to work.
 
-All of the non-deprecated scripts should be able to run in harmony, with the exception of `dpma.js`, which should not be combined with `hexedit.js` or `diep-pl.js`.
 
 ## Protocol
 

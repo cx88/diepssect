@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         Diep Packet Logger
-// @namespace    *://diep.io/
-// @version      0.1
 // @description  Tool for logging diep.io websocket packets.
+// @version      0.1
 // @author       CX
+// @namespace    *://diep.io/
 // @match        *://diep.io/
 // @grant        none
+// @run-at       document-start
 // ==/UserScript==
 
-// v6.0
 ;(() => {
   let output = (content, color) => setTimeout(color
     ? console.log.bind(null, '%c' + content, color)
