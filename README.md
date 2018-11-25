@@ -6,17 +6,16 @@ This a public repo for hacky diep stuff, including networking protocol, WebAssem
 
 I started working on this last summer in 2017, with the goal of deciphering the diep.io protocol. Unfortunately the developer started updating the game for a while, and each time the memory layout and protocol is shuffled. But since now it's been months since the last update now, I'm starting to work on it again. If you make any discoveries, pull requests are welcome!
 
-## Userscripts
+## Scripts
 
-All of the non-deprecated scripts are found in the `userscripts` folder, but you can also install them by just clicking. They all should be able to run in harmony, with the exception of `dpma.js`, which should not be combined with `hexedit.js` or `diep-pl.js`.
+All of the userscripts are found in the `userscripts` folder, but you can also install them by just clicking. They all should be able to run in harmony, with the exception of `dpma.js`, which should not be combined with `hexedit.js` or `diep-pl.js`.
 
-- [`Diep-pl.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/diep-pl.user.js) - A diep packer logger, used for deciphering the protocol.
+- [`diep-pl.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/diep-pl.user.js) - A diep packer logger, used for deciphering the protocol.
 - [`dpma.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/dpma.user.js) - A WIP script that allows both editing memory and packets.
 - [`hexedit.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/hexedit.user.js) - A script that allows memory editing.
-- [`injector.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/injector.user.js) - A script that inject itself into diep's `build_*.js` for exporting and replacing variables. It's included in `hexedit.js` and `dpma.js`
-- `replacer.js` - A deprecated script that's merged into `injector.js`
-- `exporter.js` - Another deprecated script that's merged into `injector.js`. It used to be required for `hexedit.js` to work.
+- [`injector.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/injector.user.js) - A script that inject itself into diep's `build_*.js` for exporting and replacing variables.
 
+There are other browser or node.js scripts, which can be found in the `scripts` folder.
 
 ## Protocol
 

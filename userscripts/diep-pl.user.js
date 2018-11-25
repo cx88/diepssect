@@ -6,7 +6,6 @@
 // @namespace    *://diep.io/
 // @match        *://diep.io/
 // @grant        none
-// @run-at       document-start
 // ==/UserScript==
 
 ;(() => {

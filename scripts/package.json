@@ -1,0 +1,22 @@
+{
+  "name": "scripts",
+  "version": "0.1.0",
+  "description": "All sort of scripts.",
+  "main": "connect.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cx88/diepssect.git"
+  },
+  "author": "CX <cx8128@gmail.com> (@CX#6768)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/cx88/diepssect/issues"
+  },
+  "homepage": "https://github.com/cx88/diepssect#readme",
+  "dependencies": {
+    "ws": "^6.1.2"
+  }
+}
