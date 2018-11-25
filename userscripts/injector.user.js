@@ -59,6 +59,9 @@ const Injector = window.Injector = window.Injector || (() => {
         throw new Error('Exports are not yet ready!')
       return exports
     },
+    maybeExports() {
+      return exports
+    },
     getExports() {
       return exportPromise
     },

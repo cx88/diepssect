@@ -77,3 +77,10 @@ Diep.io uses [Emscripten](https://github.com/kripken/emscripten) with [WebAssemb
 ## Memory editing
 
 You can find `userscripts/hexedit.js` and use it in TemperMonkey. Six vectors with static memory addresses have been included, and you can find their information in the comments.
+
+## Physics
+
+You can find `userscripts/diep-pl.js` and use it in TemperMonkey. Press F12 to view all short cuts, but it include features like Alt+X to pause updated, Alt+Q to view motion frame by frame, and Alt+M to enable debug mode which show raw health up to 6 digits.
+
+Here's a very useful page with lots of stuff about diep's physics.
+- https://spade-squad.com/physics.html
