@@ -14,7 +14,7 @@ All of the userscripts are found in the `userscripts` folder, but you can also i
 - [`dpma.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/dpma.user.js) - A WIP script that allows both editing memory and packets.
 - [`hexedit.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/hexedit.user.js) - A script that allows memory editing.
 - [`injector.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/injector.user.js) - A script that inject itself into diep's `build_*.js` for exporting and replacing variables.
-- [`nsfsk.user.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/nsfsk.user.js) - Test script. Currently does nothing.
+- [`nsfsk.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/nsfsk.user.js) - Test script. Currently does nothing.
 
 There are other browser or node.js scripts, which can be found in the `scripts` folder.
 
