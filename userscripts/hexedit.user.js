@@ -470,6 +470,17 @@ const Injector = window.Injector = window.Injector || (() => {
         focusPointerHalf = null
         break
       }
+      case -67: { // ctrl+c
+        let [start, end] = focusPointerSelection
+        let text = Array.from(u8.slice(start, end)).map(r => r.toString(16).padStart(2, '0')).join(' ')
+        let input = document.createElement('input')
+        input.setAttribute('value', text)
+        document.body.appendChild(input)
+        input.select()
+        document.execCommand('copy')
+        input.remove()
+        break
+      }
       case 33: // page up
         realOffsetY -= window.innerHeight * 0.8
         focusPointerHalf = null
