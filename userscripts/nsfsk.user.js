@@ -53,7 +53,7 @@
     }
   }
 
-  let $ = ptr => return new Proxy({ ptr }, { get: getter, set: setter })
+  let $ = ptr => new Proxy({ ptr }, { get: getter, set: setter })
 
   if (localStorage['actually know javascript'] !== 'yes') return
 
