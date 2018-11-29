@@ -44,7 +44,7 @@ const Injector = window.Injector = window.Injector || (() => {
       return this._getElementById(id)
     this.getElementById = this._getElementById
 
-    fetch(document.getElementsByTagName('script')[0].src)
+    fetch(document.querySelector('script[src*="build_"]').src)
       .then(r => r.text())
       .then(r => r.replace(/}\)\)\(window\)\s*$/, to => appender + to))
       .then(eval)
