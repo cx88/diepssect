@@ -28,7 +28,7 @@
       case 'vector':
         let vector = []
         for (let i = HEAPU32[ptr >> 2]; i < HEAPU32[(ptr >> 2) + 1]; i += 4)
-          vector.push($(i >> 2))
+          vector.push($(i))
         return vector
       case '$vector':
         let $vector = []
