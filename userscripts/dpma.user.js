@@ -196,10 +196,10 @@ const Canvas = class {
 const Component = class {
   constructor(parent) {
     this.parent = [parent, ...parent.parent]
-    // this.minWidth = null
-    // this.minHeight = null
   }
-  render(c, x, y, width, height) {}
+  render(c, x, y, width, height) {
+    console.warn('Component missing render function!', this)
+  }
 }
 
 const ComponentTable = class extends Component {
@@ -209,32 +209,55 @@ const ComponentTable = class extends Component {
     this.horizontal = horizontal
     this.children = []
     this.draggable = false
+    this.size = 0
   }
   render(c, x, y, width, height) {
-    this.normalizeChildrenSizes()
     let start = 0
-    for (let { size, child } of this.children) {
-      if (this.horizontal)
-        child.render(c, y + start * width, y, size * width, height)
-      else
-        child.render(c, x, y + start * height, width, size * height)
-      start += size
+    if (this.horizontal) {
+      this.resize(width)
+      for (let { size, child } of this.children) {
+        child.render(c, x + start, y, size, height)
+        start += size
+      }
+    } else {
+      this.resize(height)
+      for (let { size, child } of this.children) {
+        child.render(c, x, y + start, width, size)
+        start += size
+      }
     }
   }
   createChild(Class, ...args) {
     let child = new Class(this, ...args)
-    this.children.push({ child, size: this.children.length ? 1 / this.children.length : 1 })
+    let size = this.children.length ? Math.floor(this.size / this.children.length) : 1024
+    this.children.push({ child, size })
+    this.size += size
     return child
   }
-  normalizeChildrenSizes() {
-    let totalSize = 0
-    for (let { size } of this.children) {
-      totalSize += size
+  resize(neededSize) {
+    if (this.size === neededSize) return
+    let positionOld = 0
+    let positionNew = 0
+    for (let element of this.children) {
+      positionOld += element.size
+      let position = Math.round(positionOld / this.size * neededSize)
+      element.size = position - positionNew
+      positionNew = position
     }
-    if (totalSize !== 1)
-      for (let element of this.children) {
-        element.size = element.size / totalSize
-      }
+    this.size = neededSize
+  }
+}
+
+const Scrollable = class extends Component {
+  constructor(parent) {
+    super(parent)
+    this.position = 0
+    this.height = 0
+  }
+  render(c, x, y, width, height) {
+  }
+  renderSection(c, x, y, width, height, delta) {
+    console.warn('Scrollable missing renderSection function!', this)
   }
 }
 
@@ -251,38 +274,44 @@ const Console = class extends Component {
 }
 
 const Application = class extends ComponentTable {
-  constructor(exports) {
+  constructor() {
     super({ parent: [] })
 
-    this.width = 200
-    window.canvas.style.width = window.canvas.style.right = 'auto'
-    window.onresize = () => {
-      window.canvas.height = window.innerHeight
-      window.canvas.width = window.innerWidth - this.width
-    }
-    window.onresize()
+    this.canvas = this.createCanvas()
+    this.console = this.createChild(Console)
+    this.loop()
+  }
+  createCanvas() {
+    let leftCanvas = window.canvas
+    leftCanvas.style.width = 'auto'
+    leftCanvas.style.right = 'auto'
 
     let canvas = document.body.appendChild(document.createElement('canvas'))
     canvas.style.position = 'absolute'
-    canvas.style.right =
-    canvas.style.top =
-    canvas.style.bottom =
-      '0'
+    canvas.style.right = '0'
+    canvas.style.top = '0'
+    canvas.style.bottom = '0'
     canvas.style.height = '100%'
     canvas.style.width = 'auto'
-    this.canvas = new Canvas(canvas)
 
-    this.console = this.createChild(Console)
+    window.onresize = () => {
+      window.canvas.height = window.innerHeight
+      window.canvas.width = window.innerWidth - canvas.width
+    }
+    window.onresize()
 
-    this.loop()
+    return new Canvas(canvas)
   }
   loop() {
-    this.canvas.size(this.width, window.innerHeight)
-    this.render(this.canvas, 0, 0, this.width, window.innerHeight)
+    let width = 300
+    this.canvas.size(width, window.innerHeight)
+    this.render(this.canvas, 0, 0, width, window.innerHeight)
     requestAnimationFrame(() => this.loop())
   }
 }
 
 
 console.log(`[DPMA] Starting!`)
-Injector.getExports().then(() => new Application().loop())
+Injector.getExports().then(() => {
+  window.dpma = new Application()
+})

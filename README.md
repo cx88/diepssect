@@ -8,7 +8,7 @@ I started working on this last summer in 2017, with the goal of deciphering the 
 
 ## Scripts
 
-All of the userscripts are found in the `userscripts` folder, but you can also install them by just clicking. They all should be able to run in harmony, with the exception of `dpma.js`, which should not be combined with `hexedit.js` or `diep-pl.js`.
+All of the userscripts are found in the `userscripts` folder, but you can also install them by just clicking. They all should be able to run in harmony, with the exception of `dpma.js`, which should not be combined with `hexedit.js`. You can use it with `diep-pl.js`, but the side panel might be buggy.
 
 - [`diep-pl.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/diep-pl.user.js) - A diep packer logger, used for deciphering the protocol.
 - [`dpma.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/dpma.user.js) - A WIP script that allows both editing memory and packets.
