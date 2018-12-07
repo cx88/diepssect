@@ -4,6 +4,8 @@ const WebSocket = require('ws')
 const EventEmitter = require('events')
 const readline = require('readline')
 
+const { Reader, Writer } = require('./coder')
+
 const Bot = class extends EventEmitter {
   constructor(address) {
     super()

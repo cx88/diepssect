@@ -24,11 +24,12 @@ You can find `userscripts/diep-pl.js` and use it in TemperMonkey. Press F12 to v
 
 ### Encodings
 
-Although data is represented in many ways, there are only four core encodings. Floats are always 4 bytes, where as the rest is variable and have at least 1 byte.
+Although data is represented in many ways, there are only four core encodings. Floats and Ints are always 4 bytes, where as the rest is variable and have at least 1 byte. You can find information on all of them in the `scripts/coder.js` file.
 
 |   Name   |        Description         |
 |----------|----------------------------|
 | Float    | A floating point number    |
+| Int      | A 32 bit integer           |
 | Varint   | A signed 32 bit integer    |
 | Varuint  | An unsigned 32 bit integer |
 | Varfloat | A float casted to a varint |
