@@ -100,41 +100,46 @@ const Canvas = class {
     this.oldFontName = 'sans-serif'
 
     let mouse = {
-      x: 0, y: 0,
-      dx: 0, dy: 0,
       scroll: 0,
-      click: null,
-      left: false,
-      right: false,
+      at: { x: 0, y: 0, dx: 0, dy: 0, left: false, right: false },
+      registered: false,
+      check(x, y, w, h) {
+        if (this.registered) return
+        if (x >= at.x && x < at.x + w && y >= at.y && y < at.y + h) {
+          this.registered = true
+          return this.at
+        }
+      },
+      clear() {
+        this.registered = true
+      },
     }
 
-    let getCoordinate = (e, to) => {
-      let { left, top } = e.target.getBoundingClientRect();
-      to.x = e.clientX - left
-      to.y = e.clientY - top
-      to.dx = e.movementX
-      to.dy = e.movementY
+    let getCoordinate = e => {
+      let { left, top } = canvas.getBoundingClientRect()
+      mouse.at.x = e.clientX - left
+      mouse.at.y = e.clientY - top
+      mouse.at.dx += e.movementX
+      mouse.at.dy += e.movementY
     }
 
-    canvas.addEventListener('click', e => {
-      getCoordinate(e, mouse.click = {})
-    }, false)
     canvas.addEventListener('mousedown', e => {
-      getCoordinate(e, mouse)
+      getCoordinate(e)
       if (e.button === 0)
-        mouse.left = true
+        mouse.at.left = true
       else if (e.button === 2)
-        mouse.right = true
+        mouse.at.right = true
+      mouse.registered = false
     }, false)
-    canvas.addEventListener('mouseup', e => {
-      getCoordinate(e, mouse)
+    window.addEventListener('mousemove', e => {
+      getCoordinate(e)
+    }, false)
+    window.addEventListener('mouseup', e => {
+      getCoordinate(e)
       if (e.button === 0)
-        mouse.left = false
+        mouse.at.left = false
       else if (e.button === 2)
-        mouse.right = false
-    }, false)
-    canvas.addEventListener('mousemove', e => {
-      getCoordinate(e, mouse)
+        mouse.at.right = false
     }, false)
     canvas.addEventListener('wheel', e => {
       mouse.scroll += e.deltaY
@@ -306,6 +311,7 @@ const Application = class extends ComponentTable {
     let width = 300
     this.canvas.size(width, window.innerHeight)
     this.render(this.canvas, 0, 0, width, window.innerHeight)
+    this.mouse.clear()
     requestAnimationFrame(() => this.loop())
   }
 }

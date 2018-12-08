@@ -8,7 +8,7 @@ I started working on this last summer in 2017, with the goal of deciphering the 
 
 ## Scripts
 
-All of the userscripts are found in the `userscripts` folder, but you can also install them by just clicking. They all should be able to run in harmony, with the exception of `dpma.js`, which should not be combined with `hexedit.js`. You can use it with `diep-pl.js`, but the side panel might be buggy.
+All of the userscripts are found in the `userscripts` folder, but you can also install them by just clicking. They all should be able to run in harmony, with the exception of `dpma.js`, which should not be combined with `hexedit.js` or `diep-pl.js`.
 
 - [`diep-pl.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/diep-pl.user.js) - A diep packer logger, used for deciphering the protocol.
 - [`dpma.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/dpma.user.js) - A WIP script that allows both editing memory and packets.
@@ -24,16 +24,16 @@ You can find `userscripts/diep-pl.js` and use it in TemperMonkey. Press F12 to v
 
 ### Encodings
 
-Although data is represented in many ways, there are only four core encodings. Floats and Ints are always 4 bytes, where as the rest is variable and have at least 1 byte. You can find information on all of them in the `scripts/coder.js` file.
+Although data is represented in many ways, there are only six core encodings. You can find information on all of them in the `scripts/coder.js` file.
 
-|   Name   |        Description         |
-|----------|----------------------------|
-| Float    | A floating point number    |
-| Int      | A 32 bit integer           |
-| Varint   | A signed 32 bit integer    |
-| Varuint  | An unsigned 32 bit integer |
-| Varfloat | A float casted to a varint |
-| String   | A null terminated string   |
+|   Name   |        Description         | Size |
+|----------|----------------------------|------|
+| Float    | A floating point number    | 4    |
+| Int      | A 32 bit integer           | 4    |
+| Varint   | A signed 32 bit integer    | 1+   |
+| Varuint  | An unsigned 32 bit integer | 1+   |
+| Varfloat | A float casted to a varint | 1+   |
+| String   | A null terminated string   | 1+   |
 
 Many packets are already completely deciphered. Some packet types have a known structure, but contain tables or mappings that are unknown and possible to figure out through manual trial-and-error. A few are completely unknown and deemed impossible without reverse engineering.
 
