@@ -26,12 +26,12 @@ You can find `userscripts/diep-pl.js` and use it in TemperMonkey. Press F12 to v
 
 ### Encodings
 
-Although data is represented in many ways, there are only six core encodings. You can find information on all of them in the `scripts/coder.js` file.
+Although data is represented in many ways, there are only six primary encodings. You can find information on all of them in the `scripts/coder.js` file.
 
 |   Name   |        Description         | Size |
 |----------|----------------------------|------|
 | Float    | A floating point number    | 4    |
-| Int      | A 32 bit integer           | 4    |
+| Int      | A little-endian integer    | 4    |
 | Varint   | A signed 32 bit integer    | 1+   |
 | Varuint  | An unsigned 32 bit integer | 1+   |
 | Varfloat | A float casted to a varint | 1+   |
@@ -53,6 +53,25 @@ Many packets are already completely deciphered. Some packet types have a known s
 | `08` | clear death     | Done       |
 | `09` | take tank       | Done       |
 
+Serverbound packets are generally easy to dissect, most having few if any arguments. The only exception to this is the `01` packet, which is in the following format: `01 vu(flags) vf(x) vf(y) (vx(movementX) vy(movementY))?`
+
+The flags are as below, starting with the least significant bit:
+
+- left mouse
+- up key
+- left key
+- down key
+- right key
+- god mode
+- suicide
+- right mouse
+- instant upgrade
+- use gamepad
+- switch class
+- constant of true
+
+Note that the movement arguments are only added when using gamepads.
+
 ### Clientbound Packets
 |  ID  |    Description    |   Status   |
 |------|-------------------|------------|
@@ -67,6 +86,8 @@ Many packets are already completely deciphered. Some packet types have a known s
 | `08` | achievements      | Structured |
 | `09` | invalid link      | Done       |
 | `0a` | player count      | Done       |
+
+Although most clientbound packets are as easy as the serverside packets. There are two main extremely complicated ones, `00` and `02`, which I'll explain in [`CLIENTBOUND.md`](CLIENTBOUND.md).
 
 ### Other Repos
 
