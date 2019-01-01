@@ -1,19 +1,11 @@
 const http = require('http')
 const WebSocket = require('ws')
 const Discord = require('discord.js')
+const IpAlloc = require('./ip-alloc.js')
 
 const { PREFIX, TOKEN, IP_TEMPLATE } = require('./config.json')
 
-const GetIp = {
-  connected: {},
-  random() {
-    return IP_TEMPLATE.replace('?', Math.floor(Math.random() * 256).toString(16))
-  },
-  for(ip) {
-    let connected = this.connected[ip]
-    return this.random()
-  },
-}
+let ipAlloc = new IpAlloc(IP_TEMPLATE)
 
 let movement = [0x01, 0x80, 0x10, 0x00, 0x00]
 
@@ -59,9 +51,14 @@ let commands = {
       let int
       let success = false
 
+      let { ip, release } = ipAlloc.get(ipv6)
+      if (!ip) {
+        msg.reply('Runned out of IPs!')
+        break
+      }
       let ws = new WebSocket(`ws://[${ ipv6 }]:443`, {
         origin: 'http://diep.io',
-        localAddress: GetIp.for(ipv6),
+        localAddress: ip,
       })
       ws.on('open', () => {
         success = true
@@ -69,19 +66,21 @@ let commands = {
           msg.reply('Connected to the server.')
         ws.send([5])
         ws.send(`\x009b9e4489cd499ded99cca19f4784fc929d21fc35\x00\x00${ party }\x00\x00`.split('').map(r => r.charCodeAt(0)))
-        ws.send(`\x02\x00`.split('').map(r => r.charCodeAt(0)))
         int = setInterval(() => {
+          ws.send(`\x02\x00`.split('').map(r => r.charCodeAt(0)))
           ws.send([5])
           ws.send(movement)
         }, 30)
       })
       ws.on('close', () => {
+        release()
         if (!success) return
         if (amount <= 4)
           msg.reply('Connection closed.')
         clearInterval(int)
       })
       ws.on('error', () => {
+        release()
         if (amount <= 4)
           msg.reply('Unable to connect to the server!')
       })

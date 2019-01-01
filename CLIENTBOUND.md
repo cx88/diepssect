@@ -16,7 +16,9 @@ You might've noticed that only four out of the six primary encodings are used on
 | Entity Id  | The id of an entity.       | vu(time) vu(counter)  |
 | Varindex   | The index of a field.      | vu(index XOR 1)       |
 
-There is a table of fields, with each row mapped to an index and a type, which looks like this:
+## Fields
+
+In diep, there is a table of fields, with each row mapped to an index and a type, which looks like this:
 
 | Index | Type | Description |
 |-------|------|-------------|
@@ -25,6 +27,8 @@ There is a table of fields, with each row mapped to an index and a type, which l
 | 3     | vi   | Y-position  |
 | 5     | f    | Max Health  |
 | 24    | f    | Health      |
+
+## Example
 
 Here is a example of a packet where two entities are deleted while one is being updated:
 

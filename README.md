@@ -53,7 +53,7 @@ Many packets are already completely deciphered. Some packet types have a known s
 | `08` | clear death     | Done       |
 | `09` | take tank       | Done       |
 
-Serverbound packets are generally easy to dissect, most having few if any arguments. The only exception to this is the `01` packet, which is in the following format: `01 vu(flags) vf(x) vf(y) (vx(movementX) vy(movementY))?`
+Serverbound packets are generally easy to dissect, most having few if any arguments. The only exception to this is the `01` packet, which is in the following format: `01 vu(flags) vf(mouseX) vf(mouseY) (vx(movementX) vy(movementY))?`
 
 The flags are as below, starting with the least significant bit:
 
