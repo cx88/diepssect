@@ -1,5 +1,7 @@
 # Diepssect
 
+![Shapes. Lots of shapes.](images/shapes.png "Shapes. Lots of shapes.")
+
 This a public repo for hacky diep stuff, including networking protocol, WebAssembly, memory editing, & physics.
 
 ## Contribution
