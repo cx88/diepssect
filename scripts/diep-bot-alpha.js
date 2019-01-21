@@ -141,7 +141,7 @@ let commands = {
         socket.close()
       msg.reply('Found:\n' + Object.entries(found)
         .map(([ip, amount]) => `- ${
-          ip.toString(16).padStart(8, '0').toUpperCase().split('').reverse().join('')
+          (+ip).toString(16).padStart(8, '0').toUpperCase().split('').reverse().join('')
         } (${ amount })`)
         .join('\n'))
     }
