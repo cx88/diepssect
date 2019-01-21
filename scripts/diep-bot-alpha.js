@@ -161,7 +161,7 @@ let commands = {
         if (found.length >= 4)
           exit()
       })
-      sockets.push(socket)
+      sockets.push(ws)
     })
   },
 }
