@@ -20,6 +20,7 @@ const WriterSending = class extends Writer {
 
 const DiepScoket = class extends EventEmitter {
   constructor(address, { ip, release }) {
+    super()
     let socket = new WebSocket(address, {
       origin: address.startsWith('wss') ? 'https://diep.io' : 'http://diep.io',
       localAddress: ip,
