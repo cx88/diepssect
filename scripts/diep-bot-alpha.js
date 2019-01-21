@@ -28,7 +28,7 @@ const DiepScoket = class extends EventEmitter {
     socket.on('open', () => {
       super.emit('open')
     })
-    socket.on('message', message => {
+    socket.on('message', data => {
       let u8 = new Uint8Array(data)
       super.emit('message', new Reader(u8))
     })
