@@ -92,8 +92,9 @@ let commands = {
 
     let count = +amount || 1
 
-    if (count > 4 && perm < 2) {
+    if (count > 6 && perm < 2) {
       msg.reply('You cannot have more than 4 bots!')
+      return
     }
 
     for (let i = 0; i < amount; i++) {
@@ -127,13 +128,9 @@ let commands = {
     let { id, party } = linkParse(link)
     let { ipv6 } = await findServer(id)
 
-    if (perm < 2) {
-      msg.reply('You are not allowed to use this command!')
-    }
-
     let found = {}
     let sockets = []
-    let amount = 60
+    let amount = 12
 
     let exit = () => {
       clearInterval(int)
