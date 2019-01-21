@@ -119,7 +119,7 @@ let commands = {
       })
     }
   },
-  async party({ args: [link, amount], perm, msg }) {
+  async party({ args: [link], perm, msg }) {
     let { id, party } = linkParse(link)
     let { ipv6 } = await findServer(id)
 
@@ -127,29 +127,42 @@ let commands = {
       msg.reply('You are not allowed to use this command!')
     }
 
-    for (let i = 0; i < +amount; i++) {
+    let found = []
+    let sockets = []
+    let amount = 60
+
+    let exit = () => {
+      clearInterval(int)
+      for (let socket of sockets)
+        socket.close()
+      msg.reply('Found: ' + found.join(', '))
+    }
+    let int = setInterval(() => {
+      if (amount-- <= 0) {
+        exit()
+        return
+      }
       let alloc = ipAlloc.for(ipv6)
       if (!alloc.ip) {
         msg.reply('Runned out of IPs!')
-        break
+        exit()
+        return
       }
       let ws = new DiepScoket(`ws://[${ ipv6 }]:443`, alloc)
       ws.on('open', () => {
-        console.log('Connected to the server.')
         ws.send().vu(5).done()
-        ws.send().vu(0).string('9b9e4489cd499ded99cca19f4784fc929d21fc35').string('').string(party).string('').done()
+        ws.send().vu(0).string('9b9e4489cd499ded99cca19f4784fc929d21fc35').string('').string('').string('').done()
       })
       ws.on('message', r => {
-        if (r.vu() === 6)
-          console.log(r.i8(), r.i8(), r.i8(), r.i8(), r.i8(), r.i8())
+        if (r.vu() !== 6) return
+        let link = r.i32()
+        if (found.includes(link)) return
+        found.push(link)
+        if (found.length >= 4)
+          exit()
       })
-      ws.on('close', () => {
-        console.log('Connection closed.')
-      })
-      ws.on('error', () => {
-        console.log('Unable to connect to the server!')
-      })
-    }
+      sockets.push(socket)
+    })
   },
 }
 
