@@ -46,7 +46,11 @@ const DiepScoket = class extends EventEmitter {
     return new WriterSending(this.socket)
   }
   close() {
-    this.socket.close()
+    try {
+      this.socket.close()
+    } catch(e) {
+      this.socket.terminate()
+    }
   }
 }
 
@@ -135,7 +139,7 @@ let commands = {
       clearInterval(int)
       for (let socket of sockets)
         socket.close()
-      msg.reply('Found: ' + found.join(', '))
+      msg.reply('Found:\n' + found.map(r => '- ' + r.toString(16).padStart(8, '0').toUpperCase().split('').reverse().join('')).join('\n'))
     }
     let int = setInterval(() => {
       if (amount-- <= 0) {
@@ -162,7 +166,7 @@ let commands = {
           exit()
       })
       sockets.push(ws)
-    })
+    }, 100)
   },
 }
 
