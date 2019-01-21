@@ -131,7 +131,7 @@ let commands = {
       msg.reply('You are not allowed to use this command!')
     }
 
-    let found = []
+    let found = {}
     let sockets = []
     let amount = 60
 
@@ -139,7 +139,11 @@ let commands = {
       clearInterval(int)
       for (let socket of sockets)
         socket.close()
-      msg.reply('Found:\n' + found.map(r => '- ' + r.toString(16).padStart(8, '0').toUpperCase().split('').reverse().join('')).join('\n'))
+      msg.reply('Found:\n' + Object.entries(found)
+        .map(([ip, amount]) => `- ${
+          ip.toString(16).padStart(8, '0').toUpperCase().split('').reverse().join('')
+        } (${ amount })`)
+        .join('\n'))
     }
     let int = setInterval(() => {
       if (amount-- <= 0) {
@@ -160,9 +164,8 @@ let commands = {
       ws.on('message', r => {
         if (r.vu() !== 6) return
         let link = r.i32()
-        if (found.includes(link)) return
-        found.push(link)
-        if (found.length >= 4)
+        found[link] = (found[link] || 0) + 1
+        if (Object.keys(found).length >= 4)
           exit()
       })
       sockets.push(ws)
