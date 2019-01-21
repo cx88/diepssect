@@ -2,8 +2,52 @@ const http = require('http')
 const WebSocket = require('ws')
 const Discord = require('discord.js')
 const IpAlloc = require('./ip-alloc.js')
+const EventEmitter = require('events')
+const { Reader, Writer } = require('./coder')
 
-const { PREFIX, TOKEN, IP_TEMPLATE } = require('./config.json')
+const { PREFIX, TOKEN, IP_TEMPLATE } = require('../../config.json')
+
+const WriterSending = class extends Writer {
+  constructor(socket) {
+    super()
+    this.socket = socket
+  }
+  done() {
+    if (this.socket.readyState === 1)
+      this.socket.send(this.out())
+  }
+}
+
+const DiepScoket = class extends EventEmitter {
+  constructor(address, { ip, release }) {
+    let socket = new WebSocket(address, {
+      origin: address.startsWith('wss') ? 'https://diep.io' : 'http://diep.io',
+      localAddress: ip,
+    })
+    socket.on('open', () => {
+      super.emit('open')
+    })
+    socket.on('message', message => {
+      let u8 = new Uint8Array(data)
+      super.emit('message', new Reader(u8))
+    })
+    socket.on('close', () => {
+      release()
+      super.emit('close')
+    })
+    socket.on('error', err => {
+      release()
+      super.emit('error', err)
+    })
+    this.socket = socket
+  }
+  send() {
+    return new WriterSending(this.socket)
+  }
+  close() {
+    this.socket.close()
+  }
+}
 
 let ipAlloc = new IpAlloc(IP_TEMPLATE)
 
@@ -48,43 +92,62 @@ let commands = {
     }
 
     for (let i = 0; i < amount; i++) {
-      let int
       let success = false
 
-      let { ip, release } = ipAlloc.get(ipv6)
-      if (!ip) {
+      let alloc = ipAlloc.for(ipv6)
+      if (!alloc.ip) {
         msg.reply('Runned out of IPs!')
         break
       }
-      let ws = new WebSocket(`ws://[${ ipv6 }]:443`, {
-        origin: 'http://diep.io',
-        localAddress: ip,
-      })
+      let ws = new DiepScoket(`ws://[${ ipv6 }]:443`, alloc)
       ws.on('open', () => {
         success = true
         if (amount <= 4)
           msg.reply('Connected to the server.')
-        ws.send([5])
-        ws.send(`\x009b9e4489cd499ded99cca19f4784fc929d21fc35\x00\x00${ party }\x00\x00`.split('').map(r => r.charCodeAt(0)))
-        int = setInterval(() => {
-          ws.send(`\x02\x00`.split('').map(r => r.charCodeAt(0)))
-          ws.send([5])
-          ws.send(movement)
-        }, 30)
+        ws.send().vu(5).done()
+        ws.send().vu(0).string('9b9e4489cd499ded99cca19f4784fc929d21fc35').string('').string(party).string('').done()
       })
       ws.on('close', () => {
-        release()
         if (!success) return
         if (amount <= 4)
           msg.reply('Connection closed.')
-        clearInterval(int)
       })
       ws.on('error', () => {
-        release()
         if (amount <= 4)
           msg.reply('Unable to connect to the server!')
       })
+    }
+  },
+  async party({ args: [link, amount], perm, msg }) {
+    let { id, party } = linkParse(link)
+    let { ipv6 } = await findServer(id)
 
+    if (perm < 2) {
+      msg.reply('You are not allowed to use this command!')
+    }
+
+    for (let i = 0; i < +amount; i++) {
+      let alloc = ipAlloc.for(ipv6)
+      if (!alloc.ip) {
+        msg.reply('Runned out of IPs!')
+        break
+      }
+      let ws = new DiepScoket(`ws://[${ ipv6 }]:443`, alloc)
+      ws.on('open', () => {
+        console.log('Connected to the server.')
+        ws.send().vu(5).done()
+        ws.send().vu(0).string('9b9e4489cd499ded99cca19f4784fc929d21fc35').string('').string(party).string('').done()
+      })
+      ws.on('message', r => {
+        if (r.vu() === 6)
+          console.log(r.i8(), r.i8(), r.i8(), r.i8(), r.i8(), r.i8())
+      })
+      ws.on('close', () => {
+        console.log('Connection closed.')
+      })
+      ws.on('error', () => {
+        console.log('Unable to connect to the server!')
+      })
     }
   },
 }
@@ -104,9 +167,9 @@ bot.on('message', msg => {
 })
 bot.login(TOKEN)
 
-let server = new WebSocket.Server({ port: 1337 })
+/*let server = new WebSocket.Server({ port: 1337 })
 server.on('connection', ws => {
   ws.on('message', data => {
     movement = data
   })
-})
+})*/

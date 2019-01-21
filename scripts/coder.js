@@ -18,11 +18,13 @@ const Writer = class {
     i32[0] = num
     this.buffer.set(u8, this.length)
     this.length += 4
+    return this
   }
   float(num) {
     float[0] = num
     this.buffer.set(u8, this.length)
     this.length += 4
+    return this
   }
   vu(num) {
     do {
@@ -31,22 +33,26 @@ const Writer = class {
       if (num) part |= 0x80
       this.buffer[this.length++] = part
     } while (num)
+    return this
   }
   vi(num) {
     let sign = (num & 0x80000000) >>> 31
     if (sign) num = ~num
     let part = (num << 1) | sign
     this.vu(part)
+    return this
   }
   vf(num) {
     float[0] = num
     this.vi(endianSwap(i32[0]))
+    return this
   }
   string(str) {
     let bytes = new Uint8Array(Buffer.from(str))
     this.buffer.set(bytes, this.length)
     this.length += bytes.length
     this.buffer[this.length++] = 0
+    return this
   }
   out() {
     return this.buffer.buffer.slice(0, this.length)
