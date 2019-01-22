@@ -18,7 +18,7 @@ const WriterSending = class extends Writer {
   }
 }
 
-const DiepScoket = class extends EventEmitter {
+const DiepSocket = class extends EventEmitter {
   constructor(address, { ip, release }) {
     super()
     let socket = new WebSocket(address, {
@@ -76,13 +76,18 @@ let linkParse = link => {
   let match = link.match(/diep\.io\/#(([0-9A-F]{2})+)/)
   if (!match) return null
   let data = match[1].split('')
+  let source = 'diep.io/#'
   let id = ''
   while (true) {
-    let byte = parseInt(data.shift(), 16) + parseInt(data.shift(), 16) * 16
+    let lower = data.shift()
+    source += lower
+    let upper = data.shift()
+    source += upper
+    let byte = parseInt(lower, 16) + parseInt(upper, 16) * 16
     if (!byte) break
     id += String.fromCharCode(byte)
   }
-  return { id, party: data.join('') }
+  return { id, party: data.join(''), source }
 }
 
 let commands = {
@@ -105,7 +110,7 @@ let commands = {
         msg.reply('Runned out of IPs!')
         break
       }
-      let ws = new DiepScoket(`ws://[${ ipv6 }]:443`, alloc)
+      let ws = new DiepSocket(`ws://[${ ipv6 }]:443`, alloc)
       ws.on('open', () => {
         success = true
         if (amount <= 4)
@@ -125,7 +130,7 @@ let commands = {
     }
   },
   async party({ args: [link], perm, msg }) {
-    let { id, party } = linkParse(link)
+    let { id, party, source } = linkParse(link)
     let { ipv6 } = await findServer(id)
 
     let found = {}
@@ -137,7 +142,7 @@ let commands = {
       for (let socket of sockets)
         socket.close()
       msg.reply('Found:\n' + Object.entries(found)
-        .map(([ip, amount]) => `- ${
+        .map(([ip, amount]) => `- ${ source }${
           (+ip).toString(16).padStart(8, '0').toUpperCase().split('').reverse().join('')
         } (${ amount })`)
         .join('\n'))
@@ -153,7 +158,7 @@ let commands = {
         exit()
         return
       }
-      let ws = new DiepScoket(`ws://[${ ipv6 }]:443`, alloc)
+      let ws = new DiepSocket(`ws://[${ ipv6 }]:443`, alloc)
       ws.on('open', () => {
         ws.send().vu(5).done()
         ws.send().vu(0).string('9b9e4489cd499ded99cca19f4784fc929d21fc35').string('').string('').string('').done()
