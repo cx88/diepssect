@@ -98,7 +98,7 @@ let commands = {
     let count = +amount || 1
 
     if (count > 6 && perm < 2) {
-      msg.reply('You cannot have more than 4 bots!')
+      msg.reply('You cannot have more than 6 bots!')
       return
     }
 

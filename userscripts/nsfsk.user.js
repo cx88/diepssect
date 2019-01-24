@@ -58,9 +58,9 @@
   if (localStorage['actually know javascript'] !== 'yes') return
 
   setInterval(() => {
-    for (let entity of $(0x10a34).vector) {
-      entity[4].$[18 * 4].u32 = 0
-    }
+    for (let entity of $(0x10a34).vector)
+      if (entity[4].$[18 * 4].u32 === 1)
+        entity[4].$[18 * 4].u32 = 0
   }, 40)
 
   canvas.addEventListener('mousewheel', ({ deltaY }) => {
