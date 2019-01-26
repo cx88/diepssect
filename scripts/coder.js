@@ -103,6 +103,11 @@ const Reader = class {
     while (this.buffer[this.at]) this.at++
     return Buffer.from(this.buffer.subarray(at, this.at++)).toString()
   }
+  flush() {
+    let slice = this.buffer.slice(this.at)
+    this.at += slice.length
+    return slice
+  }
 }
 
 module.exports = { Reader, Writer }

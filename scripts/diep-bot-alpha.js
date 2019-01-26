@@ -6,6 +6,7 @@ const EventEmitter = require('events')
 const { Reader, Writer } = require('./coder')
 
 const { PREFIX, TOKEN, IP_TEMPLATE } = require('../../config.json')
+const BUILD = '9b9e4489cd499ded99cca19f4784fc929d21fc35'
 
 const WriterSending = class extends Writer {
   constructor(socket) {
@@ -18,7 +19,7 @@ const WriterSending = class extends Writer {
   }
 }
 
-const DiepSocket = class extends EventEmitter {
+const IRWSocket = class extends EventEmitter {
   constructor(address, { ip, release }) {
     super()
     let socket = new WebSocket(address, {
@@ -55,8 +56,6 @@ const DiepSocket = class extends EventEmitter {
 }
 
 let ipAlloc = new IpAlloc(IP_TEMPLATE)
-
-let movement = [0x01, 0x80, 0x10, 0x00, 0x00]
 
 let findServer = id => new Promise((resolve, reject) => {
   http.get(`http://api.n.m28.io/server/${ id }`, res => {
@@ -97,37 +96,55 @@ let commands = {
 
     let count = +amount || 1
 
-    if (count > 6 && perm < 2) {
-      msg.reply('You cannot have more than 6 bots!')
+    let limit = [5, 20, 80][perm]
+    if (count > limit) {
+      msg.reply(`You cannot have more than ${ limit } bots!`)
       return
     }
 
-    for (let i = 0; i < amount; i++) {
-      let success = false
+    let reply = msg.reply('Connecting...')
+    let bots = []
 
+    for (let i = 0; i < count; i++) {
       let alloc = ipAlloc.for(ipv6)
-      if (!alloc.ip) {
+      if (!alloc) {
         msg.reply('Runned out of IPs!')
         break
       }
-      let ws = new DiepSocket(`ws://[${ ipv6 }]:443`, alloc)
+
+      let bot = { code: 0 }
+      let ws = new IRWSocket(`ws://[${ ipv6 }]:443`, alloc)
       ws.on('open', () => {
-        success = true
-        if (amount <= 4)
-          msg.reply('Connected to the server.')
+        bot.code = 1
         ws.send().vu(5).done()
-        ws.send().vu(0).string('9b9e4489cd499ded99cca19f4784fc929d21fc35').string('').string(party).string('').done()
+        ws.send().vu(0).string(BUILD).string('').string(party).string('').done()
       })
       ws.on('close', () => {
-        if (!success) return
-        if (amount <= 4)
-          msg.reply('Connection closed.')
+        bot.code = 2
       })
       ws.on('error', () => {
-        if (amount <= 4)
-          msg.reply('Unable to connect to the server!')
+        bot.code = 3
       })
+      bots.push(bot)
     }
+
+    let i = 0, oldStatus = null, clear = setInterval(() => {
+      if (++i >= 65) clearInterval(clear)
+      let newStatus = `Status:  ${
+        bots.filter(r => r.code === 0).length
+      }T / ${
+        bots.filter(r => r.code === 1).length
+      }S / ${
+        bots.filter(r => r.code === 2).length
+      }C / ${
+        bots.filter(r => r.code === 3).length
+      }E  (${
+        bots.length
+      } total)`
+
+      if (oldStatus !== newStatus)
+        reply.edit(newStatus)
+    }, 5000)
   },
   async party({ args: [link], perm, msg }) {
     let { id, party, source } = linkParse(link)
@@ -142,9 +159,7 @@ let commands = {
       for (let socket of sockets)
         socket.close()
       msg.reply('Found:\n' + Object.entries(found)
-        .map(([ip, amount]) => `- ${ source }${
-          (+ip).toString(16).padStart(8, '0').toUpperCase().split('').reverse().join('')
-        } (${ amount })`)
+        .map(([link, amount]) => `- ${ source }${ link } (${ amount })`)
         .join('\n'))
     }
     let int = setInterval(() => {
@@ -153,19 +168,19 @@ let commands = {
         return
       }
       let alloc = ipAlloc.for(ipv6)
-      if (!alloc.ip) {
+      if (!alloc) {
         msg.reply('Runned out of IPs!')
         exit()
         return
       }
-      let ws = new DiepSocket(`ws://[${ ipv6 }]:443`, alloc)
+      let ws = new IRWSocket(`ws://[${ ipv6 }]:443`, alloc)
       ws.on('open', () => {
         ws.send().vu(5).done()
-        ws.send().vu(0).string('9b9e4489cd499ded99cca19f4784fc929d21fc35').string('').string('').string('').done()
+        ws.send().vu(0).string(BUILD).string('').string('').string('').done()
       })
       ws.on('message', r => {
         if (r.vu() !== 6) return
-        let link = r.i32()
+        let link = r.flush().map(r => r.toString(16).padStart(2, '0').toUpperCase().split('').reverse().join('')).join('')
         found[link] = (found[link] || 0) + 1
         if (Object.keys(found).length >= 4)
           exit()
@@ -189,10 +204,3 @@ bot.on('message', msg => {
     command({ msg, args, perm })
 })
 bot.login(TOKEN)
-
-/*let server = new WebSocket.Server({ port: 1337 })
-server.on('connection', ws => {
-  ws.on('message', data => {
-    movement = data
-  })
-})*/

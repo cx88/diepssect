@@ -38,7 +38,7 @@ const IpAlloc = class {
         break
       }
     if (index === null)
-      return { ip: null }
+      return null
     let locked = true
     return {
       ip: this.asString(index),
