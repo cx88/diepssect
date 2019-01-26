@@ -102,7 +102,7 @@ let commands = {
       return
     }
 
-    let reply = msg.reply('Connecting...')
+    let reply = await msg.reply('Connecting...')
     let bots = []
 
     for (let i = 0; i < count; i++) {
