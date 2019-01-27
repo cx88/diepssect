@@ -129,7 +129,7 @@ let commands = {
     }
 
     let i = 0, oldStatus = null, clear = setInterval(() => {
-      if (++i >= 65) clearInterval(clear)
+      if (++i >= 160) clearInterval(clear)
       let newStatus = `Status:  ${
         bots.filter(r => r.code === 0).length
       }T / ${
@@ -144,7 +144,43 @@ let commands = {
 
       if (oldStatus !== newStatus)
         reply.edit(newStatus)
-    }, 5000)
+    }, 2000)
+  },
+  async pump({ args: [link, amount], perm, msg }) {
+    let { id, party } = linkParse(link)
+    let { ipv6 } = await findServer(id)
+
+    let count = +amount || 1
+
+    let limit = [5, 20, 80][perm]
+    if (count > limit) {
+      msg.reply(`You cannot use more than ${ limit } bots!`)
+      return
+    }
+
+    let reply = await msg.reply('Pumping server...')
+    let wss = []
+
+    for (let i = 0; i < count; i++) {
+      let alloc = ipAlloc.for(ipv6)
+      if (!alloc) {
+        msg.reply('Runned out of IPs!')
+        break
+      }
+
+      let ws = new IRWSocket(`ws://[${ ipv6 }]:443`, alloc)
+      ws.on('open', () => {
+        ws.send().vu(5).done()
+        ws.send().vu(0).string(BUILD).string('').string(party).string('').done()
+      })
+      wss.push(ws)
+    }
+
+    setTimeout(() => {
+      for (let ws of bots)
+        ws.close()
+      reply.edit('Done!')
+    }, 2000)
   },
   async party({ args: [link], perm, msg }) {
     let { id, party, source } = linkParse(link)
