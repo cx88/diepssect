@@ -12,13 +12,12 @@ const IpAlloc = class {
     if (!match)
       throw new SyntaxError('Invalid IPv6 range!')
 
-    let maximum = 1 << Math.min(16, +match[2])
+    let maximum = 1 << match[2]
     let ipv6 = parseIpv6(match[0])
 
     this.ipStart = ipv6.slice(0, 7).map(r => r.toString(16)).join(':') + ':'
     this.ipMin = ipv6[7] & -maximum
     this.maximum = maximum
-
     this.connected = {}
   }
   asString(addr) {

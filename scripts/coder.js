@@ -14,6 +14,11 @@ const Writer = class {
     this.length = 0
     this.buffer = new Uint8Array(4096)
   }
+  i8(num) {
+    this.buffer[this.length] = num
+    this.length += 1
+    return this
+  }
   i32(num) {
     i32[0] = num
     this.buffer.set(u8, this.length)

@@ -5,7 +5,7 @@ const IpAlloc = require('./ip-alloc.js')
 const EventEmitter = require('events')
 const { Reader, Writer } = require('./coder')
 
-const { PREFIX, TOKEN, IP_TEMPLATE } = require('../../config.json')
+const { PREFIX, TOKEN, IP_TEMPLATE } = require('../config.json')
 const BUILD = '9b9e4489cd499ded99cca19f4784fc929d21fc35'
 
 const WriterSending = class extends Writer {
@@ -33,7 +33,7 @@ const IRWSocket = class extends EventEmitter {
       let u8 = new Uint8Array(data)
       super.emit('message', new Reader(u8))
     })
-    socket.on('close', () => {
+    socket.on('close', e => {
       release()
       super.emit('close')
     })
@@ -96,7 +96,7 @@ let commands = {
 
     let count = +amount || 1
 
-    let limit = [5, 20, 80][perm]
+    let limit = [5, 20, 160][perm]
     if (count > limit) {
       msg.reply(`You cannot have more than ${ limit } bots!`)
       return
@@ -146,13 +146,94 @@ let commands = {
         reply.edit(newStatus)
     }, 2000)
   },
+  async cancer({ args: [link, amount], perm, msg }) {
+    let { id, party } = linkParse(link)
+    let { ipv6 } = await findServer(id)
+
+    let count = +amount || 1
+
+    let limit = [2, 4, 160][perm]
+    if (count > limit) {
+      msg.reply(`You cannot have more than ${ limit } bots!`)
+      return
+    }
+
+    let reply = await msg.reply('Connecting...')
+    let bots = []
+
+    for (let i = 0; i < count; i++) {
+      let alloc = ipAlloc.for(ipv6)
+      if (!alloc) {
+        msg.reply('Runned out of IPs!')
+        break
+      }
+
+      let ws = new IRWSocket(`ws://[${ ipv6 }]:443`, alloc)
+      let bot = { code: 0, ws }
+      let int
+      ws.on('open', () => {
+        bot.code = 1
+        ws.send().vu(0).string(BUILD).string('').string(party).string('').done()
+        ws.send().vu(2).string('Cancer Bot').done()
+        let frameCount = 0
+        int = setInterval(() => {
+          let flags = 0b100100000001
+          let upgrade = null
+          if (frameCount === 48) {
+            upgrade = 18
+          } else if (frameCount === 49) {
+            upgrade = 32
+          } else if (frameCount >= 50 && frameCount % 2 === 0) {
+            upgrade = 94
+          } else {
+            flags |= 0b010000000000
+          }
+          if (upgrade !== null)
+            ws.send().vu(4).i8(upgrade).done()
+          ws.send().vu(1).vu(flags).vf(0).vf(0).done()
+          frameCount++
+        }, 30)
+      })
+      ws.on('close', () => {
+        clearInterval(int)
+        bot.code = 2
+      })
+      ws.on('error', () => {
+        bot.code = 3
+      })
+      bots.push(bot)
+    }
+
+    let i = 0, oldStatus = null, clear = setInterval(() => {
+      if (++i >= 160) clearInterval(clear)
+      let newStatus = `Status:  ${
+        bots.filter(r => r.code === 0).length
+      }T / ${
+        bots.filter(r => r.code === 1).length
+      }S / ${
+        bots.filter(r => r.code === 2).length
+      }C / ${
+        bots.filter(r => r.code === 3).length
+      }E  (${
+        bots.length
+      } total)`
+
+      if (oldStatus !== newStatus)
+        reply.edit(newStatus)
+    }, 2000)
+
+    setTimeout(() => {
+      for (let { ws } of bots)
+        ws.close()
+    }, 5 * 60e3)
+  },
   async pump({ args: [link, amount], perm, msg }) {
     let { id, party } = linkParse(link)
     let { ipv6 } = await findServer(id)
 
     let count = +amount || 1
 
-    let limit = [5, 20, 80][perm]
+    let limit = [5, 20, 160][perm]
     if (count > limit) {
       msg.reply(`You cannot use more than ${ limit } bots!`)
       return
@@ -177,7 +258,7 @@ let commands = {
     }
 
     setTimeout(() => {
-      for (let ws of bots)
+      for (let ws of wss)
         ws.close()
       reply.edit('Done!')
     }, 2000)
