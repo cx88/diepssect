@@ -55,19 +55,19 @@
 
   let $ = ptr => new Proxy({ ptr }, { get: getter, set: setter })
 
-  if (localStorage['actually know javascript'] !== 'yes') return
+  if (localStorage['actually know javascript'] === 'yes') {
+    setInterval(() => {
+      for (let entity of $(0x10a34).vector)
+        if (entity[4].$[18 * 4].u32 === 1)
+          entity[4].$[18 * 4].u32 = 0
+    }, 40)
 
-  setInterval(() => {
-    for (let entity of $(0x10a34).vector)
-      if (entity[4].$[18 * 4].u32 === 1)
-        entity[4].$[18 * 4].u32 = 0
-  }, 40)
-
-  canvas.addEventListener('mousewheel', ({ deltaY }) => {
-    let diff = Math.pow(0.9, deltaY / 40)
-    $(0x10a70).$vector[0][11 * 4].f32 *= diff
-    //$(0x10a70).$vector[0][19 * 4].u32 = level
-  })
+    canvas.addEventListener('mousewheel', ({ deltaY }) => {
+      let diff = Math.pow(0.9, deltaY / 40)
+      $(0x10a70).$vector[0][11 * 4].f32 *= diff
+      //$(0x10a70).$vector[0][19 * 4].u32 = level
+    })
+  }
 
   window.$ = $
 })()

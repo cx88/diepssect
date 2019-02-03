@@ -55,6 +55,104 @@ const IRWSocket = class extends EventEmitter {
   }
 }
 
+/*const CommanderError = class extends Error {
+  constructor(...args) {
+    super(...args)
+    Error.captureStackTrace(this, GoodError)
+  }
+}*/
+
+const Commander = class {
+  constructor(id) {
+    this.id = id
+    this.bots = []
+  }
+  get maximum() {
+    let perm = this.id === '239162248990294017' ? 3 : 0
+    return [10, 40, 200, 1000][perm]
+  }
+  createBotUnchecked() {
+    let id
+    do {
+      id = Math.floor(Math.random() * 36 ** 3).toString(36).toUpperCase().padStart(3, '0')
+    } while (this.bots.some(r => r.id === id))
+    let bot = {
+      id,
+      socket: null,
+      group: null,
+      remove: () => {
+        if (bot.group) {
+          let i = bot.group.indexOf(bot)
+          if (i !== -1)
+            bot.group.splice(i, 1)
+        }
+        let i = this.bots.indexOf(bot)
+        if (i !== -1)
+          this.bots.splice(i, 1)
+      },
+    }
+    this.bots.push(bot)
+    return bot
+  }
+  createBot(amount = null) {
+    if (amount === null && this.bots.length + 1 <= this.maximum) {
+      return createBotUnchecked()
+    } else if (amount >= 0 && this.bots.length + amount <= this.maximum) {
+      let group = []
+      for (let i = 0; i < amount; i++) {
+        let bot = this.createBotUnchecked()
+        bot.group = group
+        group.push(bot)
+      }
+      return group
+    } else {
+      return null
+    }
+  }
+  connectServer({ ipv6, party = '' }, amount, processBot = bot => {
+    bot.status = 0
+    let ws = bot.socket
+    ws.on('open', () => {
+      bot.status = 1
+      ws.send().vu(5).done()
+      ws.send().vu(0).string(BUILD).string('').string(party).string('').done()
+    })
+    ws.on('close', () => {
+      bot.status = 2
+    })
+    ws.on('error', () => {
+      bot.status = 3
+    })
+  }) {
+    let bots = this.createBot(amount || 1)
+    if (!bots)
+      return null
+    for (let bot of bots) {
+      let alloc = ipAlloc.for(ipv6)
+      if (!alloc) {
+        bots.ipOutage = true
+        break
+      }
+      bot.socket = new IRWSocket(`ws://[${ ipv6 }]:443`, alloc)
+      processBot(bot)
+    }
+    if (bots.ipOutage)
+      for (let bot of bots.slice())
+        if (!bot.socket)
+          bot.remove()
+    return bots
+  }
+  getBot(id) {
+    return this.bots.find(r => r.id === id)
+  }
+  removeBot(id) {
+    let bot = this.getBot(id)
+    if (bot)
+      bot.remove()
+    return bot
+  }
+}
+
 let ipAlloc = new IpAlloc(IP_TEMPLATE)
 
 let findServer = id => new Promise((resolve, reject) => {
@@ -89,91 +187,58 @@ let linkParse = link => {
   return { id, party: data.join(''), source }
 }
 
+let monitor = async (msg, bots, time = 4 * 60e3) => {
+  let reply = await msg.reply('Connecting...')
+
+  let oldStatus = null
+  let clear = setInterval(() => {
+    let newStatus = `Status:  ${
+      bots.filter(r => r.status === 0).length
+    }T / ${
+      bots.filter(r => r.status === 1).length
+    }S / ${
+      bots.filter(r => r.status === 2).length
+    }C / ${
+      bots.filter(r => r.status === 3).length
+    }E  (${
+      bots.length
+    } total)`
+
+    if (oldStatus !== newStatus)
+      reply.edit(newStatus)
+  }, 1000)
+
+  setTimeout(() => {
+    for (let bot of bots.slice()) {
+      bot.socket.close()
+      bot.remove()
+    }
+    setTimeout(() => {
+      clearInterval(clear)
+    }, 10e3)
+  }, time)
+}
 let commands = {
-  async connect({ args: [link, amount], perm, msg }) {
-    let { id, party } = linkParse(link)
-    let { ipv6 } = await findServer(id)
-
-    let count = +amount || 1
-
-    let limit = [5, 20, 160][perm]
-    if (count > limit) {
-      msg.reply(`You cannot have more than ${ limit } bots!`)
+  async connect({ args: [link, amount], commander, msg }) {
+    let bots = commander.connectServer(await link.server(), amount.integer(1))
+    if (!bots) {
+      msg.reply(`You cannot have more than ${ commander.maximum } bots!`)
       return
+    } else if (bots.ipOutage) {
+      msg.reply('Note: runned out of IPs!')
     }
 
-    let reply = await msg.reply('Connecting...')
-    let bots = []
-
-    for (let i = 0; i < count; i++) {
-      let alloc = ipAlloc.for(ipv6)
-      if (!alloc) {
-        msg.reply('Runned out of IPs!')
-        break
-      }
-
-      let bot = { code: 0 }
-      let ws = new IRWSocket(`ws://[${ ipv6 }]:443`, alloc)
-      ws.on('open', () => {
-        bot.code = 1
-        ws.send().vu(5).done()
-        ws.send().vu(0).string(BUILD).string('').string(party).string('').done()
-      })
-      ws.on('close', () => {
-        bot.code = 2
-      })
-      ws.on('error', () => {
-        bot.code = 3
-      })
-      bots.push(bot)
-    }
-
-    let i = 0, oldStatus = null, clear = setInterval(() => {
-      if (++i >= 160) clearInterval(clear)
-      let newStatus = `Status:  ${
-        bots.filter(r => r.code === 0).length
-      }T / ${
-        bots.filter(r => r.code === 1).length
-      }S / ${
-        bots.filter(r => r.code === 2).length
-      }C / ${
-        bots.filter(r => r.code === 3).length
-      }E  (${
-        bots.length
-      } total)`
-
-      if (oldStatus !== newStatus)
-        reply.edit(newStatus)
-    }, 2000)
+    monitor(msg, bots)
   },
-  async cancer({ args: [link, amount], perm, msg }) {
-    let { id, party } = linkParse(link)
-    let { ipv6 } = await findServer(id)
-
-    let count = +amount || 1
-
-    let limit = [2, 4, 160][perm]
-    if (count > limit) {
-      msg.reply(`You cannot have more than ${ limit } bots!`)
-      return
-    }
-
-    let reply = await msg.reply('Connecting...')
-    let bots = []
-
-    for (let i = 0; i < count; i++) {
-      let alloc = ipAlloc.for(ipv6)
-      if (!alloc) {
-        msg.reply('Runned out of IPs!')
-        break
-      }
-
-      let ws = new IRWSocket(`ws://[${ ipv6 }]:443`, alloc)
-      let bot = { code: 0, ws }
+  async cancer({ args: [link, amount], commander, msg }) {
+    let server = await link.server()
+    let bots = commander.connectServer(server, amount.integer(1), bot => {
+      bot.status = 0
+      let ws = bot.socket
       let int
       ws.on('open', () => {
-        bot.code = 1
-        ws.send().vu(0).string(BUILD).string('').string(party).string('').done()
+        bot.status = 1
+        ws.send().vu(0).string(BUILD).string('').string(server.party).string('').done()
         ws.send().vu(2).string('Cancer Bot').done()
         let frameCount = 0
         int = setInterval(() => {
@@ -196,76 +261,66 @@ let commands = {
       })
       ws.on('close', () => {
         clearInterval(int)
-        bot.code = 2
+        bot.status = 2
       })
       ws.on('error', () => {
-        bot.code = 3
+        bot.status = 3
       })
-      bots.push(bot)
+    })
+    if (!bots) {
+      msg.reply(`You cannot have more than ${ commander.maximum } bots!`)
+      return
+    } else if (bots.ipOutage) {
+      msg.reply('Note: runned out of IPs!')
     }
 
-    let i = 0, oldStatus = null, clear = setInterval(() => {
-      if (++i >= 160) clearInterval(clear)
-      let newStatus = `Status:  ${
-        bots.filter(r => r.code === 0).length
-      }T / ${
-        bots.filter(r => r.code === 1).length
-      }S / ${
-        bots.filter(r => r.code === 2).length
-      }C / ${
-        bots.filter(r => r.code === 3).length
-      }E  (${
-        bots.length
-      } total)`
-
-      if (oldStatus !== newStatus)
-        reply.edit(newStatus)
-    }, 2000)
-
-    setTimeout(() => {
-      for (let { ws } of bots)
-        ws.close()
-    }, 5 * 60e3)
+    monitor(msg, bots)
   },
-  async pump({ args: [link, amount], perm, msg }) {
-    let { id, party } = linkParse(link)
-    let { ipv6 } = await findServer(id)
-
-    let count = +amount || 1
-
-    let limit = [5, 20, 160][perm]
-    if (count > limit) {
-      msg.reply(`You cannot use more than ${ limit } bots!`)
+  async pump({ args: [link, amount], commander, msg }) {
+    let server = await link.server()
+    let bots = commander.connectServer(server, amount.integer(1), bot => {
+      let ws = bot.socket
+      ws.on('open', () => {
+        ws.send().vu(5).done()
+        ws.send().vu(0).string(BUILD).string('').string(server.party).string('').done()
+      })
+    })
+    if (!bots) {
+      msg.reply(`You cannot have more than ${ commander.maximum } bots!`)
       return
+    } else if (bots.ipOutage) {
+      msg.reply('Note: runned out of IPs!')
     }
 
     let reply = await msg.reply('Pumping server...')
-    let wss = []
-
-    for (let i = 0; i < count; i++) {
-      let alloc = ipAlloc.for(ipv6)
-      if (!alloc) {
-        msg.reply('Runned out of IPs!')
-        break
-      }
-
-      let ws = new IRWSocket(`ws://[${ ipv6 }]:443`, alloc)
-      ws.on('open', () => {
-        ws.send().vu(5).done()
-        ws.send().vu(0).string(BUILD).string('').string(party).string('').done()
-      })
-      wss.push(ws)
-    }
-
     setTimeout(() => {
-      for (let ws of wss)
-        ws.close()
+      for (let bot of bots.slice()) {
+        bot.socket.close()
+        bot.remove()
+      }
       reply.edit('Done!')
     }, 2000)
   },
-  async party({ args: [link], perm, msg }) {
-    let { id, party, source } = linkParse(link)
-    let { ipv6 } = await findServer(id)
+  async list({ commander, msg }) {
+    if (commander.bots.length > 0)
+      msg.reply(`Your bots (${ commander.bots.length }/${ commander.maximum }):\n` + commander.bots.map(r => `-  \`${ r.id }\`  Status: ${ 'TSCE'.charAt(r.status) || 'U' }`).join('\n'))
+    else
+      msg.reply(`You have no bots. (0/${ commander.maximum })`)
+  },
+  async remove({ args: [id], commander, msg }) {
+    let bot = commander.bots.find(r => r.id === id.id())
+    if (bot) {
+      if (bot.socket) {
+        bot.socket.close()
+      }
+      bot.remove()
+      msg.reply('Removed bot.')
+    } else {
+      msg.reply('Bot not found!')
+    }
+  },
+  async party({ args: [link], commander, msg }) {
+    let { ipv6, party, source } = await link.server()
 
     let found = {}
     let sockets = []
@@ -286,7 +341,7 @@ let commands = {
       }
       let alloc = ipAlloc.for(ipv6)
       if (!alloc) {
-        msg.reply('Runned out of IPs!')
+        msg.reply('Note: runned out of IPs!')
         exit()
         return
       }
@@ -308,16 +363,43 @@ let commands = {
 }
 
 let bot = new Discord.Client()
+let commanders = {}
 bot.on('message', msg => {
   if (!msg.content.startsWith(PREFIX)) return
   let args = msg.content.slice(PREFIX.length).trim().split(/\s+/)
-
-  let perm = msg.author.id === '239162248990294017' ? 2 : 0
-
   let command = commands[args.shift()]
-  if (typeof command !== 'function')
+
+  if (typeof command !== 'function') {
     msg.reply('Command not found!')
-  else
-    command({ msg, args, perm })
+  } else {
+    args = args.map(string => ({
+      toString() { return string },
+      id() { return string.toUpperCase().replace(/[^0-9A-Z]/g, '') },
+      valueOf() { return (+string || 0) },
+      link() { return linkParse(string) },
+      integer(minimum = 0) {
+        return Math.max(minimum, Math.floor(+string) || 0)
+      },
+      async server() {
+        let { id, party, source } = linkParse(string)
+        let server = await findServer(id)
+        server.id = id
+        server.party = party
+        server.source = source
+        return server
+      },
+    }))
+
+    let commander = commanders[msg.author.id]
+    if (!commander)
+      commander = commanders[msg.author.id] = new Commander(msg.author.id)
+
+    try {
+      command({ msg, args, commander })
+    } catch(e) {
+      msg.reply('Error while executing command!')
+      console.error(e)
+    }
+  }
 })
 bot.login(TOKEN)
