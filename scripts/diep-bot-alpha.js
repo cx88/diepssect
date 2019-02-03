@@ -76,21 +76,38 @@ const Commander = class {
     do {
       id = Math.floor(Math.random() * 36 ** 4).toString(36).toUpperCase().padStart(4, '0')
     } while (this.bots.some(r => r.id === id))
+    let self = this
     let bot = {
       id,
       socket: null,
       group: null,
-      remove: () => {
-        if (bot.group) {
-          let i = bot.group.indexOf(bot)
-          if (i !== -1)
-            bot.group.splice(i, 1)
+      expire: Date.now() + 8 * 60e3,
+      remove() {
+        this.expire = Date.now()
+        clearTimeout(timeout)
+        if (this.socket) {
+          this.socket.close()
         }
-        let i = this.bots.indexOf(bot)
+        if (this.group) {
+          let i = this.group.indexOf(this)
+          if (i !== -1)
+            this.group.splice(i, 1)
+        }
+        let i = self.bots.indexOf(this)
         if (i !== -1)
-          this.bots.splice(i, 1)
+          self.bots.splice(i, 1)
       },
+      renew(to) {
+        this.expire = Date.now() + to
+        clearTimeout(timeout)
+        timeout = setTimeout(() => {
+          this.remove()
+        }, to)
+      }
     }
+    let timeout = setTimeout(() => {
+      bot.remove()
+    }, 8 * 60e3)
     this.bots.push(bot)
     return bot
   }
@@ -119,6 +136,7 @@ const Commander = class {
     })
     ws.on('close', () => {
       bot.status = 2
+      ws.send().vu(1).vu(0b100000000000).vf(0).vf(0).done()
     })
     ws.on('error', () => {
       bot.status = 3
@@ -187,7 +205,7 @@ let linkParse = link => {
   return { id, party: data.join(''), source }
 }
 
-let monitor = async (msg, bots, time = 4 * 60e3) => {
+let monitor = async (msg, bots) => {
   let reply = await msg.reply('Connecting...')
 
   let oldStatus = null
@@ -206,17 +224,9 @@ let monitor = async (msg, bots, time = 4 * 60e3) => {
 
     if (oldStatus !== newStatus)
       reply.edit(newStatus)
-  }, 1000)
-
-  setTimeout(() => {
-    for (let bot of bots.slice()) {
-      bot.socket.close()
-      bot.remove()
-    }
-    setTimeout(() => {
+    if (bots.length === 0)
       clearInterval(clear)
-    }, 10e3)
-  }, time)
+  }, 2000)
 }
 let commands = {
   async connect({ args: [link, amount], commander, msg }) {
@@ -292,38 +302,41 @@ let commands = {
       msg.reply('Note: ran out of IPs!')
     }
 
-    let reply = await msg.reply('Pumping server...')
-    setTimeout(() => {
-      for (let bot of bots.slice()) {
-        bot.socket.close()
-        bot.remove()
-      }
-      reply.edit('Done!')
-    }, 2000)
+    for (let bot of bots) {
+      bot.renew(2000)
+    }
+
+    let reply = await msg.reply('Pumped server.')
   },
   async list({ commander, msg }) {
     if (commander.bots.length > 0)
-      msg.reply(`Your bots (${ commander.bots.length }/${ commander.maximum }):\n` + commander.bots.map(r => `-  \`${ r.id }\`  Status: ${ 'TSCE'.charAt(r.status) || 'U' }`).join('\n'))
+      msg.reply(`Your bots (${ commander.bots.length }/${ commander.maximum }):\n` +
+        commander.bots.map(bot => {
+          let status = 'TSCE'.charAt(bot.status) || 'U'
+          let seconds = Math.max(0, Math.ceil((bot.expire - Date.now()) / 1000))
+          let minutes = Math.floor(seconds / 60)
+          seconds %= 60
+          let hours = Math.floor(minutes / 60)
+          minutes %= 60
+          let expire =
+            (hours ? hours + 'h ' : '') +
+            (minutes ? minutes + 'm ' : '') +
+            (seconds ? seconds + 's ' : '')
+          return `-   \`${ bot.id }\`    Status:  ${ status }    Expiring In:  ${ expire }`
+        }).join('\n'))
     else
       msg.reply(`You have no bots. (0/${ commander.maximum })`)
   },
   async remove({ args: [id], commander, msg }) {
     id = id.id()
     if (id === 'ALL') {
-      for (let bot of bots.slice()) {
-        if (bot.socket) {
-          bot.socket.close()
-        }
+      for (let bot of commander.bots.slice())
         bot.remove()
-      }
       msg.reply('Removed all bots.')
       return
     }
     let bot = commander.bots.find(r => r.id === id)
     if (bot) {
-      if (bot.socket) {
-        bot.socket.close()
-      }
       bot.remove()
       msg.reply('Removed bot.')
     } else {
@@ -421,12 +434,10 @@ bot.on('message', msg => {
     if (!commander)
       commander = commanders[msg.author.id] = new Commander(msg.author.id)
 
-    try {
-      command({ msg, args, commander })
-    } catch(e) {
+    command({ msg, args, commander }).catch(e => {
       msg.reply('Error while executing command!')
       console.error(e)
-    }
+    })
   }
 })
 bot.login(TOKEN)
