@@ -74,7 +74,7 @@ const Commander = class {
   createBotUnchecked() {
     let id
     do {
-      id = Math.floor(Math.random() * 36 ** 3).toString(36).toUpperCase().padStart(3, '0')
+      id = Math.floor(Math.random() * 36 ** 4).toString(36).toUpperCase().padStart(4, '0')
     } while (this.bots.some(r => r.id === id))
     let bot = {
       id,
@@ -225,7 +225,7 @@ let commands = {
       msg.reply(`You cannot have more than ${ commander.maximum } bots!`)
       return
     } else if (bots.ipOutage) {
-      msg.reply('Note: runned out of IPs!')
+      msg.reply('Note: ran out of IPs!')
     }
 
     monitor(msg, bots)
@@ -271,7 +271,7 @@ let commands = {
       msg.reply(`You cannot have more than ${ commander.maximum } bots!`)
       return
     } else if (bots.ipOutage) {
-      msg.reply('Note: runned out of IPs!')
+      msg.reply('Note: ran out of IPs!')
     }
 
     monitor(msg, bots)
@@ -289,7 +289,7 @@ let commands = {
       msg.reply(`You cannot have more than ${ commander.maximum } bots!`)
       return
     } else if (bots.ipOutage) {
-      msg.reply('Note: runned out of IPs!')
+      msg.reply('Note: ran out of IPs!')
     }
 
     let reply = await msg.reply('Pumping server...')
@@ -308,7 +308,18 @@ let commands = {
       msg.reply(`You have no bots. (0/${ commander.maximum })`)
   },
   async remove({ args: [id], commander, msg }) {
-    let bot = commander.bots.find(r => r.id === id.id())
+    id = id.id()
+    if (id === 'ALL') {
+      for (let bot of bots.slice()) {
+        if (bot.socket) {
+          bot.socket.close()
+        }
+        bot.remove()
+      }
+      msg.reply('Removed all bots.')
+      return
+    }
+    let bot = commander.bots.find(r => r.id === id)
     if (bot) {
       if (bot.socket) {
         bot.socket.close()
@@ -341,7 +352,7 @@ let commands = {
       }
       let alloc = ipAlloc.for(ipv6)
       if (!alloc) {
-        msg.reply('Note: runned out of IPs!')
+        msg.reply('Note: ran out of IPs!')
         exit()
         return
       }
@@ -352,7 +363,7 @@ let commands = {
       })
       ws.on('message', r => {
         if (r.vu() !== 6) return
-        let link = r.flush().map(r => r.toString(16).padStart(2, '0').toUpperCase().split('').reverse().join('')).join('')
+        let link = Array.from(r.flush()).map(r => r.toString(16).padStart(2, '0').toUpperCase().split('').reverse().join('')).join('')
         found[link] = (found[link] || 0) + 1
         if (Object.keys(found).length >= 4)
           exit()
@@ -367,9 +378,10 @@ let commands = {
       '- pump <party link> [amount]            Connect to a diep server and immediately leave',
       '- list                                                           List your bots with their ID and status',
       '- remove [id]                                           Remove a bot given its ID',
+      '- remove all                                              Remove all of your bots',
       '- party <party link>                                Find all party links given a single link of a team server',
       '',
-      'Note that you are only given 10 bots, so use the remove command when you don\'t need them.'
+      'Note that you are only given 10 bots, so use the remove command when you don\'t need them.',
       '',
       'Invite to the Discord server: <https://discord.gg/8gvUd3v>',
       'Invite to the bot: <https://discordapp.com/oauth2/authorize?client_id=398241406910726144&scope=bot&permissions=8>',
