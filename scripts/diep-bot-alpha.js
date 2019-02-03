@@ -360,6 +360,21 @@ let commands = {
       sockets.push(ws)
     }, 100)
   },
+  async help({ msg }) {
+    msg.reply([
+      'List of commands:',
+      '- connect <party link> [amount]        Connect to a diep server, used to expand arena',
+      '- pump <party link> [amount]            Connect to a diep server and immediately leave',
+      '- list                                                           List your bots with their ID and status',
+      '- remove [id]                                           Remove a bot given its ID',
+      '- party <party link>                                Find all party links given a single link of a team server',
+      '',
+      'Note that you are only given 10 bots, so use the remove command when you don\'t need them.'
+      '',
+      'Invite to the Discord server: <https://discord.gg/8gvUd3v>',
+      'Invite to the bot: <https://discordapp.com/oauth2/authorize?client_id=398241406910726144&scope=bot&permissions=8>',
+    ].join('\n'))
+  }
 }
 
 let bot = new Discord.Client()
