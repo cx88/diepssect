@@ -28,8 +28,12 @@ let loadBundle = src => fetch(src).then(res => res.json()).then(newBundle => {
   if (bundle.timestamp < newBundle.timestamp) { // Update
     bundle = newBundle
     window.localStorage.dpmaBundle = JSON.stringify(bundle)
-    console.log('[DPMA LOADER] Updated cached bundle, reloading...')
-    window.location.reload()
+    if (bundle.code !== newBundle.code) {
+      console.log('[DPMA LOADER] Updated cached bundle, reloading...')
+      window.location.reload()
+    } else {
+      console.log('[DPMA LOADER] Timestamp updated but no actual update available')
+    }
   } else {
     console.log('[DPMA LOADER] No update available')
   }
