@@ -14,8 +14,8 @@ If you make any discoveries, pull requests are welcome! You can also message me 
 
 All of the userscripts are found in the `userscripts` folder, but you can also install them by just clicking. They all should be able to run in harmony, with the exception of `dpma.js`, which should not be combined with `hexedit.js` or `diep-pl.js`.
 
+- [`dpma.js`](https://raw.githubusercontent.com/cx88/diepssect/master/dpma/dpma.user.js) - A WIP script that allows both editing memory and packets.
 - [`diep-pl.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/diep-pl.user.js) - A diep packer logger, used for deciphering the protocol.
-- [`dpma.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/dpma.user.js) - A WIP script that allows both editing memory and packets.
 - [`hexedit.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/hexedit.user.js) - A script that allows memory editing.
 - [`injector.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/injector.user.js) - A script that inject itself into diep's `build_*.js` for exporting and replacing variables.
 - [`nsfsk.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/nsfsk.user.js) - Test script. Currently does nothing.

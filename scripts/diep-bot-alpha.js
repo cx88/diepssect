@@ -136,7 +136,7 @@ const Commander = class {
     })
     ws.on('close', () => {
       bot.status = 2
-      ws.send().vu(1).vu(0b100000000000).vf(0).vf(0).done()
+      ws.send().vu(1).vu(0b100000000000 | Math.round(Math.random())).vf(0).vf(0).done()
     })
     ws.on('error', () => {
       bot.status = 3
@@ -406,29 +406,38 @@ let bot = new Discord.Client()
 let commanders = {}
 bot.on('message', msg => {
   if (!msg.content.startsWith(PREFIX)) return
-  let args = msg.content.slice(PREFIX.length).trim().split(/\s+/)
-  let command = commands[args.shift()]
+  let argsArray = msg.content.slice(PREFIX.length).trim().split(/\s+/)
+  let command = commands[argsArray.shift()]
 
   if (typeof command !== 'function') {
     msg.reply('Command not found!')
   } else {
-    args = args.map(string => ({
-      toString() { return string },
-      id() { return string.toUpperCase().replace(/[^0-9A-Z]/g, '') },
-      valueOf() { return (+string || 0) },
-      link() { return linkParse(string) },
-      integer(minimum = 0) {
-        return Math.max(minimum, Math.floor(+string) || 0)
+    let args = {
+      next() {
+        let string = argsArray.shift() || ''
+        return {
+          done: false,
+          value: {
+            toString() { return string },
+            id() { return string.toUpperCase().replace(/[^0-9A-Z]/g, '') },
+            valueOf() { return (+string || 0) },
+            link() { return linkParse(string) },
+            integer(minimum = 0) {
+              return Math.max(minimum, Math.floor(+string) || 0)
+            },
+            async server() {
+              let { id, party, source } = linkParse(string)
+              let server = await findServer(id)
+              server.id = id
+              server.party = party
+              server.source = source
+              return server
+            },
+          },
+        }
       },
-      async server() {
-        let { id, party, source } = linkParse(string)
-        let server = await findServer(id)
-        server.id = id
-        server.party = party
-        server.source = source
-        return server
-      },
-    }))
+      [Symbol.iterator]: function() { return this },
+    }
 
     let commander = commanders[msg.author.id]
     if (!commander)
