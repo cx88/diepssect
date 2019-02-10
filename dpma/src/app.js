@@ -98,7 +98,7 @@ const Console = class extends Component {
 }*/
 
 const DiepCanvas = class extends Component {
-  constructor(parent, mode = 1) {
+  constructor(parent, mode = 0) {
     // 0 = CSS, 1 = Copy, 2 = Loop Hijack
     super(parent)
     window.onresize = () => {}
@@ -125,8 +125,8 @@ const DiepCanvas = class extends Component {
   }
   render(c, x, y, width, height) {
     c.mouse(this.mc, x, y, width, height)
-    if (input)
-      if (this.mc.hover) {
+    if (window.input)
+      if (this.mc.owned) {
         input.mouse(this.mc.x - x, this.mc.y - y)
         if (this.mc.left) {
           input.keyDown(1)

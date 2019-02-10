@@ -66,7 +66,8 @@ const Canvas = class {
     let mi = this.mouseAt.x >= x && this.mouseAt.x < x + w
           && this.mouseAt.y >= y && this.mouseAt.y < y + h
     mc.hover = mi && (!check || check(this.mouseAt))
-    if (!mc.hover) return null
+    mc.owned = mc.hover || this.mc
+    if (!mc.owned) return null
 
     mc.x = this.mouseAt.x
     mc.y = this.mouseAt.y
@@ -76,6 +77,7 @@ const Canvas = class {
   }
   resetMouse() {
     if (this.mc && !this.mc.left && !this.mc.right) {
+      this.mc.owned = null
       this.mc.hover = null
       this.mc = null
     }
