@@ -28,53 +28,57 @@ const Canvas = class {
     this.ctx = canvas.getContext('2d')
     this.oldFontName = 'sans-serif'
 
-    let mouse = {
-      scroll: 0,
-      at: { x: 0, y: 0, dx: 0, dy: 0, left: false, right: false },
-      registered: false,
-      check(x, y, w, h) {
-        if (this.registered) return
-        if (x >= at.x && x < at.x + w && y >= at.y && y < at.y + h) {
-          this.registered = true
-          return this.at
-        }
-      },
-      clear() {
-        this.registered = true
-      },
-    }
+    this.mc = null
+    this.mouseAt = { x: 0, y: 0, left: false, right: false }
 
+    let mouseAt = this.mouseAt
     let getCoordinate = e => {
       let { left, top } = canvas.getBoundingClientRect()
-      mouse.at.x = e.clientX - left
-      mouse.at.y = e.clientY - top
-      mouse.at.dx += e.movementX
-      mouse.at.dy += e.movementY
+      mouseAt.x = e.clientX - left
+      mouseAt.y = e.clientY - top
+      //mouseAt.dx += e.movementX
+      //mouseAt.dy += e.movementY
     }
 
     canvas.addEventListener('mousedown', e => {
       getCoordinate(e)
       if (e.button === 0)
-        mouse.at.left = true
+        mouseAt.left = true
       else if (e.button === 2)
-        mouse.at.right = true
-      mouse.registered = false
+        mouseAt.right = true
     }, false)
-    window.addEventListener('mousemove', e => {
+    canvas.addEventListener('mousemove', e => {
       getCoordinate(e)
     }, false)
-    window.addEventListener('mouseup', e => {
+    canvas.addEventListener('mouseup', e => {
       getCoordinate(e)
       if (e.button === 0)
-        mouse.at.left = false
+        mouseAt.left = false
       else if (e.button === 2)
-        mouse.at.right = false
+        mouseAt.right = false
     }, false)
     canvas.addEventListener('wheel', e => {
-      mouse.scroll += e.deltaY
+      //mouse.scroll += e.deltaY
     }, false)
+  }
+  mouse(mc, x, y, w, h, check = null) {
+    if (this.mc && this.mc !== mc) return null
+    let mi = this.mouseAt.x >= x && this.mouseAt.x < x + w
+          && this.mouseAt.y >= y && this.mouseAt.y < y + h
+    mc.hover = mi && (!check || check(this.mouseAt))
+    if (!mc.hover) return null
 
-    this.mouse = mouse
+    mc.x = this.mouseAt.x
+    mc.y = this.mouseAt.y
+    mc.left = this.mouseAt.left
+    mc.right = this.mouseAt.right
+    this.mc = mc
+  }
+  resetMouse() {
+    if (this.mc && !this.mc.left && !this.mc.right) {
+      this.mc.hover = null
+      this.mc = null
+    }
   }
   size(width, height) {
     let needsUpdate =
@@ -95,6 +99,9 @@ const Canvas = class {
   }
   rect(x, y, w, h) {
     this.ctx.fillRect(x, y, w, h)
+  }
+  image(source, x, y, w, h) {
+    this.ctx.drawImage(source, x, y, w, h)
   }
   circle(x, y, r) {
     this.ctx.beginPath()

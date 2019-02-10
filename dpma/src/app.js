@@ -81,40 +81,128 @@ const Console = class extends Component {
   }
 }
 
+/*const CopyImageSource = class extends Component {
+  constructor(parent, source) {
+    super(parent)
+    this.source = source
+  }
+  render(c, x, y, width, height) {
+    if (this.source.width !== width || this.source.height !== height) {
+      c.image(this.source, x, y, this.source.width, this.source.height)
+      this.source.width = width
+      this.source.height = height
+    } else {
+      c.image(this.source, x, y, width, height)
+    }
+  }
+}*/
+
+const DiepCanvas = class extends Component {
+  constructor(parent, mode = 1) {
+    // 0 = CSS, 1 = Copy, 2 = Loop Hijack
+    super(parent)
+    window.onresize = () => {}
+    if (mode === 0) {
+      /*top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;*/
+      window.canvas.style.top = '0'
+      window.canvas.style.left = '0'
+      window.canvas.style.right = 'auto'
+      window.canvas.style.bottom = 'auto'
+      window.canvas.style.width = 'auto'
+      window.canvas.style.height = 'auto'
+    } else {
+      window.canvas.style.display = 'none'
+    }
+
+    this.mode = mode
+    this.disabled = false
+    this.mc = {}
+  }
+  render(c, x, y, width, height) {
+    c.mouse(this.mc, x, y, width, height)
+    if (input)
+      if (this.mc.hover) {
+        input.mouse(this.mc.x - x, this.mc.y - y)
+        if (this.mc.left) {
+          input.keyDown(1)
+        } else {
+          input.keyUp(1)
+        }
+        if (this.mc.right) {
+          input.keyDown(3)
+        } else {
+          input.keyUp(3)
+        }
+      } else {
+        input.keyUp(1)
+        input.keyUp(3)
+      }
+    let source = window.canvas
+    if (this.mode === 1) {
+      c.image(source, x, y, width, height)
+    }
+    if (source.width !== width || source.height !== height) {
+      source.width = width
+      source.height = height
+    }
+    if (this.mode === 0) {
+      window.canvas.style.top = y + 'px'
+      window.canvas.style.left = x + 'px'
+    } else if (this.mode === 2) {
+      if (source.width !== width || source.height !== height) {
+        source.width = width
+        source.height = height
+      }
+      const { Browser } = Injector.exports
+      if (this.disabled) {
+        Browser.mainLoop.runner()
+      } else if (Browser.mainLoop.runner) {
+        Browser.mainLoop.pause()
+        Browser.mainLoop.currentlyRunningMainloop--
+        Browser.mainLoop.scheduler = () => {}
+        Browser.mainLoop.runner()
+        this.disabled = true
+      }
+      c.image(source, x, y, width, height)
+    }
+  }
+}
+
+/*$(0x10a7c).$vector.map(r => {
+  if (r[0x48].f32 && r[0x28].f32)
+    r[0x48].f32 = r[0x28].f32
+})*/
+
 const Application = class extends ComponentTable {
   constructor() {
-    super({ parent: [] })
+    super({ parent: [] }, true)
 
     this.canvas = this.createCanvas()
+    this.diepCanvas = this.createChild(DiepCanvas)
     this.console = this.createChild(Console)
     this.loop()
   }
   createCanvas() {
-    let leftCanvas = window.canvas
-    leftCanvas.style.width = 'auto'
-    leftCanvas.style.right = 'auto'
-
     let canvas = document.body.appendChild(document.createElement('canvas'))
     canvas.style.position = 'absolute'
+    canvas.style.left = '0'
     canvas.style.right = '0'
     canvas.style.top = '0'
     canvas.style.bottom = '0'
     canvas.style.height = '100%'
-    canvas.style.width = 'auto'
-
-    window.onresize = () => {
-      window.canvas.height = window.innerHeight
-      window.canvas.width = window.innerWidth - canvas.width
-    }
-    window.onresize()
-
+    canvas.style.width = '100%'
     return new Canvas(canvas)
   }
   loop() {
-    let width = 300
-    this.canvas.size(width, window.innerHeight)
-    this.render(this.canvas, 0, 0, width, window.innerHeight)
-    this.mouse.clear()
+    this.canvas.size(window.innerWidth, window.innerHeight)
+    this.canvas.resetMouse()
+    this.render(this.canvas, 0, 0, window.innerWidth, window.innerHeight)
+    //this.mouse.clear()
     requestAnimationFrame(() => this.loop())
   }
 }
