@@ -85,13 +85,6 @@ const Canvas = class {
     mc.right = this.mouseAt.right
     this.mc = mc
   }
-  resetMouse() {
-    if (this.mc && !this.mc.left && !this.mc.right) {
-      this.mc.owned = null
-      this.mc.hover = null
-      this.mc = null
-    }
-  }
   reset(width, height) {
     if (this.mc && !this.mc.left && !this.mc.right) {
       this.mc.owned = null
@@ -110,6 +103,9 @@ const Canvas = class {
       this.ctx.clearRect(0, 0, width, height)
     }
     return [width, height, needsUpdate]
+  }
+  cursor(cursor) {
+    this.canvas.style.cursor = cursor
   }
   fill(color) {
     this.ctx.fillStyle = color

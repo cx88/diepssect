@@ -20,21 +20,28 @@ const ComponentTable = class extends Component {
     this.size = 0
   }
   render(c, x, y, width, height) {
+    let dividerSize = 5
     if (this.horizontal) {
       this.resize(width)
+
       if (this.resizable) {
         let start = this.children[0].size
         for (let i = 1; i < this.children.length; i++) {
-          //let beforeCap = this.children[i - 2] ? this.children[i - 2].size : -Infinity
           let before = this.children[i - 1]
           let after = this.children[i]
-          //let afterCap = this.children[i + 1] ? this.children[i + 1].size : Infinity
-          c.mouse(after.mc, x + start - 3, y, 6, height)
+          let nextSize = i === this.children.length - 1
+            ? dividerSize
+            : Math.min(after.size / 2, dividerSize)
+          c.mouse(after.mc, x + start - dividerSize, y, dividerSize + nextSize, height)
           start += after.size
-          if (after.mc.owned && after.mc.left) {
-            before.size += after.mc.dx
-            after.size -= after.mc.dx
-            after.mc.dx = 0
+          if (after.mc.owned) {
+            c.cursor('col-resize')
+            if (after.mc.left) {
+              let dxBy = Math.min(after.size, Math.max(-before.size, after.mc.dx))
+              before.size += dxBy
+              after.size -= dxBy
+              after.mc.dx -= dxBy
+            }
           }
         }
       }
@@ -46,6 +53,29 @@ const ComponentTable = class extends Component {
       }
     } else {
       this.resize(height)
+
+      if (this.resizable) {
+        let start = this.children[0].size
+        for (let i = 1; i < this.children.length; i++) {
+          let before = this.children[i - 1]
+          let after = this.children[i]
+          let nextSize = i === this.children.length - 1
+            ? dividerSize
+            : Math.min(after.size / 2, dividerSize)
+          c.mouse(after.mc, x, y + start - dividerSize, width, dividerSize + nextSize)
+          start += after.size
+          if (after.mc.owned) {
+            c.cursor('row-resize')
+            if (after.mc.left) {
+              let dyBy = Math.min(after.size, Math.max(-before.size, after.mc.dy))
+              before.size += dyBy
+              after.size -= dyBy
+              after.mc.dy -= dyBy
+            }
+          }
+        }
+      }
+
       let start = 0
       for (let { size, child } of this.children) {
         child.render(c, x, y + start, width, size)
@@ -153,6 +183,7 @@ const DiepCanvas = class extends Component {
     c.mouse(this.mc, x, y, width, height)
     if (window.input)
       if (this.mc.owned) {
+        c.cursor(window.canvas.style.cursor)
         input.mouse(this.mc.x - x, this.mc.y - y)
         if (this.mc.left) {
           input.keyDown(1)
@@ -216,9 +247,13 @@ const Application = class extends ComponentTable {
   constructor() {
     super({ parent: [] }, true, true)
 
+    this.mc = {}
     this.canvas = this.createCanvas()
     this.diepCanvas = this.createChild(DiepCanvas)
-    this.console = this.createChild(Console)
+    this.controller = this.createChild(ComponentTable, false, true)
+    this.controller.createChild(Console)
+    this.controller.createChild(Console)
+    this.controller.createChild(Console)
     this.resizeChildren([3, 1])
     this.loop()
   }
@@ -236,6 +271,10 @@ const Application = class extends ComponentTable {
   loop() {
     this.canvas.reset(window.innerWidth, window.innerHeight)
     this.render(this.canvas, 0, 0, window.innerWidth, window.innerHeight)
+    this.canvas.mouse(this.mc, 0, 0, window.innerWidth, window.innerHeight)
+    if (this.mc.owned) {
+      this.canvas.cursor('default')
+    }
     //this.mouse.clear()
     requestAnimationFrame(() => this.loop())
   }
