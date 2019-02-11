@@ -11,24 +11,42 @@ const Component = class {
 }
 
 const ComponentTable = class extends Component {
-  constructor(parent, horizontal = false) {
+  constructor(parent, horizontal = false, resizable = false) {
     super(parent)
 
     this.horizontal = horizontal
+    this.resizable = resizable
     this.children = []
-    this.draggable = false
     this.size = 0
   }
   render(c, x, y, width, height) {
-    let start = 0
     if (this.horizontal) {
       this.resize(width)
+      if (this.resizable) {
+        let start = this.children[0].size
+        for (let i = 1; i < this.children.length; i++) {
+          //let beforeCap = this.children[i - 2] ? this.children[i - 2].size : -Infinity
+          let before = this.children[i - 1]
+          let after = this.children[i]
+          //let afterCap = this.children[i + 1] ? this.children[i + 1].size : Infinity
+          c.mouse(after.mc, x + start - 3, y, 6, height)
+          start += after.size
+          if (after.mc.owned && after.mc.left) {
+            before.size += after.mc.dx
+            after.size -= after.mc.dx
+            after.mc.dx = 0
+          }
+        }
+      }
+
+      let start = 0
       for (let { size, child } of this.children) {
         child.render(c, x + start, y, size, height)
         start += size
       }
     } else {
       this.resize(height)
+      let start = 0
       for (let { size, child } of this.children) {
         child.render(c, x, y + start, width, size)
         start += size
@@ -38,9 +56,17 @@ const ComponentTable = class extends Component {
   createChild(Class, ...args) {
     let child = new Class(this, ...args)
     let size = this.children.length ? Math.floor(this.size / this.children.length) : 1024
-    this.children.push({ child, size })
+    this.children.push({ child, size, mc: {} })
     this.size += size
     return child
+  }
+  resizeChildren(sizes) {
+    let totalSize = 0
+    for (let element of this.children) {
+      element.size = sizes.shift() || element.size
+      totalSize += element.size
+    }
+    this.size = totalSize
   }
   resize(neededSize) {
     if (this.size === neededSize) return
@@ -176,15 +202,24 @@ const DiepCanvas = class extends Component {
 /*$(0x10a7c).$vector.map(r => {
   if (r[0x48].f32 && r[0x28].f32)
     r[0x48].f32 = r[0x28].f32
-})*/
+})
+$(0x10a7c).$vector[0].$[0x38].u32 + $(0x10a7c).$vector[0].$[0x36].u16 * 0x100000000
+$(0x10a7c).$vector.map(r => {
+  let x = r[0x28].f32
+  let y = r[0x48].f32
+  let id = r.$[0x38].u32 * 0x10000 + r[0].$[0x36].u16
+  return { x, y, id }
+}).reduce((a, b) => a.id > b.id ? a : b)
+*/
 
 const Application = class extends ComponentTable {
   constructor() {
-    super({ parent: [] }, true)
+    super({ parent: [] }, true, true)
 
     this.canvas = this.createCanvas()
     this.diepCanvas = this.createChild(DiepCanvas)
     this.console = this.createChild(Console)
+    this.resizeChildren([3, 1])
     this.loop()
   }
   createCanvas() {
@@ -199,8 +234,7 @@ const Application = class extends ComponentTable {
     return new Canvas(canvas)
   }
   loop() {
-    this.canvas.size(window.innerWidth, window.innerHeight)
-    this.canvas.resetMouse()
+    this.canvas.reset(window.innerWidth, window.innerHeight)
     this.render(this.canvas, 0, 0, window.innerWidth, window.innerHeight)
     //this.mouse.clear()
     requestAnimationFrame(() => this.loop())

@@ -36,8 +36,10 @@ const Canvas = class {
       let { left, top } = canvas.getBoundingClientRect()
       mouseAt.x = e.clientX - left
       mouseAt.y = e.clientY - top
-      //mouseAt.dx += e.movementX
-      //mouseAt.dy += e.movementY
+      if (this.mc) {
+        this.mc.dx += e.movementX
+        this.mc.dy += e.movementY
+      }
     }
 
     canvas.addEventListener('mousedown', e => {
@@ -58,7 +60,9 @@ const Canvas = class {
         mouseAt.right = false
     }, false)
     canvas.addEventListener('wheel', e => {
-      //mouse.scroll += e.deltaY
+      if (this.mc) {
+        this.mc.scroll += e.deltaY
+      }
     }, false)
   }
   mouse(mc, x, y, w, h, check = null) {
@@ -66,8 +70,14 @@ const Canvas = class {
     let mi = this.mouseAt.x >= x && this.mouseAt.x < x + w
           && this.mouseAt.y >= y && this.mouseAt.y < y + h
     mc.hover = mi && (!check || check(this.mouseAt))
-    mc.owned = mc.hover || this.mc
-    if (!mc.owned) return null
+    let isOwned = mc.hover || this.mc
+    if (!isOwned) return null
+    if (isOwned && !mc.owned) {
+      mc.dx = 0
+      mc.dy = 0
+      mc.scroll = 0
+      mc.owned = true
+    }
 
     mc.x = this.mouseAt.x
     mc.y = this.mouseAt.y
@@ -82,7 +92,13 @@ const Canvas = class {
       this.mc = null
     }
   }
-  size(width, height) {
+  reset(width, height) {
+    if (this.mc && !this.mc.left && !this.mc.right) {
+      this.mc.owned = null
+      this.mc.hover = null
+      this.mc = null
+    }
+
     let needsUpdate =
       width !== this.canvas.width ||
       height !== this.canvas.height
@@ -90,6 +106,8 @@ const Canvas = class {
       this.canvas.width = width
       this.canvas.height = height
       this.ctx.textBaseline = 'middle'
+    } else {
+      this.ctx.clearRect(0, 0, width, height)
     }
     return [width, height, needsUpdate]
   }
