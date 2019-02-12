@@ -30,6 +30,7 @@ const Canvas = class {
 
     this.mc = null
     this.mouseAt = { x: 0, y: 0, left: false, right: false }
+    this.translates = [{ x: 0, y: 0 }]
 
     let mouseAt = this.mouseAt
     let getCoordinate = e => {
@@ -42,7 +43,17 @@ const Canvas = class {
       }
     }
 
+    canvas.addEventListener('click', e => {
+      e.preventDefault()
+    }, false)
+    canvas.addEventListener('dragstart', e => {
+      e.preventDefault()
+    }, false)
+    canvas.addEventListener('contextmenu', e => {
+      e.preventDefault()
+    }, false)
     canvas.addEventListener('mousedown', e => {
+      e.preventDefault()
       getCoordinate(e)
       if (e.button === 0)
         mouseAt.left = true
@@ -66,6 +77,9 @@ const Canvas = class {
     }, false)
   }
   mouse(mc, x, y, w, h, check = null) {
+    let t = this.translates[this.translates.length - 1]
+    x += t.x
+    y += t.y
     if (this.mc && this.mc !== mc) return null
     let mi = this.mouseAt.x >= x && this.mouseAt.x < x + w
           && this.mouseAt.y >= y && this.mouseAt.y < y + h
@@ -79,14 +93,14 @@ const Canvas = class {
       mc.owned = true
     }
 
-    mc.x = this.mouseAt.x
-    mc.y = this.mouseAt.y
+    mc.x = this.mouseAt.x - t.x
+    mc.y = this.mouseAt.y - t.y
     mc.left = this.mouseAt.left
     mc.right = this.mouseAt.right
     this.mc = mc
   }
   reset(width, height) {
-    if (this.mc && !this.mc.left && !this.mc.right) {
+    if (this.mc && !this.mc.left) {
       this.mc.owned = null
       this.mc.hover = null
       this.mc = null
@@ -106,6 +120,19 @@ const Canvas = class {
   }
   cursor(cursor) {
     this.canvas.style.cursor = cursor
+  }
+  clipRect(x, y, w, h) {
+    let last = this.translates[this.translates.length - 1]
+    this.translates.push({ x: x + last.x, y: y + last.y })
+    this.ctx.save()
+    this.ctx.translate(x, y)
+    this.ctx.beginPath()
+    this.ctx.rect(0, 0, w, h)
+    this.ctx.clip()
+  }
+  clipPop() {
+    this.ctx.restore()
+    this.translates.pop()
   }
   fill(color) {
     this.ctx.fillStyle = color

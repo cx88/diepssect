@@ -1,12 +1,19 @@
 const Injector = require('./injector.js')
 const Canvas = require('./canvas.js')
+const Math = require('./math.js')
+const $ = require('./pointer.js')
 
 const Component = class {
   constructor(parent) {
     this.parent = [parent, ...parent.parent]
   }
-  render(c, x, y, width, height) {
+  render(c, width, height) {
     console.warn('Component missing render function!', this)
+  }
+  renderAbsolute(c, x, y, width, height) {
+    c.clipRect(x, y, width, height)
+    this.render(c, width, height)
+    c.clipPop()
   }
 }
 
@@ -19,7 +26,7 @@ const ComponentTable = class extends Component {
     this.children = []
     this.size = 0
   }
-  render(c, x, y, width, height) {
+  render(c, width, height) {
     let dividerSize = 5
     if (this.horizontal) {
       this.resize(width)
@@ -32,12 +39,15 @@ const ComponentTable = class extends Component {
           let nextSize = i === this.children.length - 1
             ? dividerSize
             : Math.min(after.size / 2, dividerSize)
-          c.mouse(after.mc, x + start - dividerSize, y, dividerSize + nextSize, height)
+          c.mouse(after.mc, start - dividerSize, 0, dividerSize + nextSize, height)
           start += after.size
           if (after.mc.owned) {
             c.cursor('col-resize')
             if (after.mc.left) {
-              let dxBy = Math.min(after.size, Math.max(-before.size, after.mc.dx))
+              let dxBy = Math.constrain(
+                i === 1 ? 10 - before.size : -before.size,
+                i === this.children.length - 1 ? after.size - 10 : after.size,
+                after.mc.dx)
               before.size += dxBy
               after.size -= dxBy
               after.mc.dx -= dxBy
@@ -48,7 +58,7 @@ const ComponentTable = class extends Component {
 
       let start = 0
       for (let { size, child } of this.children) {
-        child.render(c, x + start, y, size, height)
+        child.renderAbsolute(c, start, 0, size, height)
         start += size
       }
     } else {
@@ -62,12 +72,15 @@ const ComponentTable = class extends Component {
           let nextSize = i === this.children.length - 1
             ? dividerSize
             : Math.min(after.size / 2, dividerSize)
-          c.mouse(after.mc, x, y + start - dividerSize, width, dividerSize + nextSize)
+          c.mouse(after.mc, 0, start - dividerSize, width, dividerSize + nextSize)
           start += after.size
           if (after.mc.owned) {
             c.cursor('row-resize')
             if (after.mc.left) {
-              let dyBy = Math.min(after.size, Math.max(-before.size, after.mc.dy))
+              let dyBy = Math.constrain(
+                i === 1 ? 10 - before.size : -before.size,
+                i === this.children.length - 1 ? after.size - 10 : after.size,
+                after.mc.dy)
               before.size += dyBy
               after.size -= dyBy
               after.mc.dy -= dyBy
@@ -78,7 +91,7 @@ const ComponentTable = class extends Component {
 
       let start = 0
       for (let { size, child } of this.children) {
-        child.render(c, x, y + start, width, size)
+        child.renderAbsolute(c, 0, 0 + start, width, size)
         start += size
       }
     }
@@ -118,10 +131,23 @@ const Scrollable = class extends Component {
     this.position = 0
     this.height = 0
   }
-  render(c, x, y, width, height) {
+  render(c, width, height) {
+    this.resize(height)
   }
-  renderSection(c, x, y, width, height, delta) {
+  renderSection(c, from, width, height) {
     console.warn('Scrollable missing renderSection function!', this)
+  }
+  resize(height) {
+    if (this.height === height) return
+    let positionOld = 0
+    let positionNew = 0
+    for (let element of this.children) {
+      positionOld += element.size
+      let position = Math.round(positionOld / this.size * neededSize)
+      element.size = position - positionNew
+      positionNew = position
+    }
+    this.height = height
   }
 }
 
@@ -129,11 +155,57 @@ const Console = class extends Component {
   constructor(parent) {
     super(parent)
   }
-  render(c, x, y, width, height) {
+  render(c, width, height) {
     c.fill('#000000')
-    c.rect(x, y, width, height)
+    c.rect(0, 0, width, height)
     c.fill('#ffffff')
-    c.rect(x + 2, y + 2, width - 4, height - 4)
+    c.rect(2, 2, width - 4, height - 4)
+  }
+}
+
+const EntityBox = class extends Component {
+  constructor(parent) {
+    super(parent)
+  }
+  render(c, width, height) {
+    c.fill('#f7f7f7')
+    c.rect(0, 0, width, height)
+    c.fill('#c4c4c4')
+    c.rect(Math.floor(width / 2), 0, 2, height)
+    c.rect(0, Math.floor(height / 2), width, 2)
+    c.rect(Math.floor(width / 2) - 250, Math.floor(height / 2) - 250, 2, 500)
+    c.rect(Math.floor(width / 2) - 250, Math.floor(height / 2) - 250, 500, 2)
+    c.rect(Math.floor(width / 2) + 250, Math.floor(height / 2) - 250, 2, 500)
+    c.rect(Math.floor(width / 2) - 250, Math.floor(height / 2) + 250, 500, 2)
+    c.font(10)
+    c.fill('#36363e')
+    let entities = $(0x10a7c).$vector.map($entity => {
+      let x = $entity[0x28].f32
+      let y = $entity[0x48].f32
+      let id = $entity.$[0x38].u32 * 0x10000 + $entity.$[0x36].u16
+      return { x, y, id }
+    })
+    let newestId = entities.map(r => r.id).reduce((a, b) => a > b ? a : b, -1)
+    for (let { x, y, id } of entities) {
+      if (newestId === id)
+        c.fill('#3636cf')
+      c.circle(x / 5 + width / 2, y / 5 + height / 2, 3)
+      c.text(`(${ Math.round(x) }, ${ Math.round(y) })`, x / 5 + width / 2 + 5, y / 5 + height / 2, 5)
+      if (newestId === id)
+        c.fill('#36363e')
+    }
+/*$(0x10a7c).$vector.map(r => {
+  if (r[0x48].f32 && r[0x28].f32)
+    r[0x48].f32 = r[0x28].f32
+})
+$(0x10a7c).$vector[0].$[0x38].u32 + $(0x10a7c).$vector[0].$[0x36].u16 * 0x100000000
+$(0x10a7c).$vector.map(r => {
+  let x = r[0x28].f32
+  let y = r[0x48].f32
+  let id = r.$[0x38].u32 * 0x10000 + r[0].$[0x36].u16
+  return { x, y, id }
+}).reduce((a, b) => a.id > b.id ? a : b)
+*/
   }
 }
 
@@ -142,7 +214,7 @@ const Console = class extends Component {
     super(parent)
     this.source = source
   }
-  render(c, x, y, width, height) {
+  renderAbsolute(c, x, y, width, height) {
     if (this.source.width !== width || this.source.height !== height) {
       c.image(this.source, x, y, this.source.width, this.source.height)
       this.source.width = width
@@ -179,7 +251,7 @@ const DiepCanvas = class extends Component {
     this.disabled = false
     this.mc = {}
   }
-  render(c, x, y, width, height) {
+  renderAbsolute(c, x, y, width, height) {
     c.mouse(this.mc, x, y, width, height)
     if (window.input)
       if (this.mc.owned) {
@@ -230,19 +302,6 @@ const DiepCanvas = class extends Component {
   }
 }
 
-/*$(0x10a7c).$vector.map(r => {
-  if (r[0x48].f32 && r[0x28].f32)
-    r[0x48].f32 = r[0x28].f32
-})
-$(0x10a7c).$vector[0].$[0x38].u32 + $(0x10a7c).$vector[0].$[0x36].u16 * 0x100000000
-$(0x10a7c).$vector.map(r => {
-  let x = r[0x28].f32
-  let y = r[0x48].f32
-  let id = r.$[0x38].u32 * 0x10000 + r[0].$[0x36].u16
-  return { x, y, id }
-}).reduce((a, b) => a.id > b.id ? a : b)
-*/
-
 const Application = class extends ComponentTable {
   constructor() {
     super({ parent: [] }, true, true)
@@ -251,11 +310,13 @@ const Application = class extends ComponentTable {
     this.canvas = this.createCanvas()
     this.diepCanvas = this.createChild(DiepCanvas)
     this.controller = this.createChild(ComponentTable, false, true)
-    this.controller.createChild(Console)
-    this.controller.createChild(Console)
+    this.controller.createChild(EntityBox)
     this.controller.createChild(Console)
     this.resizeChildren([3, 1])
     this.loop()
+    this.canvas.canvas.addEventListener('mousemove', e => {
+      this.loop(true)
+    }, false)
   }
   createCanvas() {
     let canvas = document.body.appendChild(document.createElement('canvas'))
@@ -268,15 +329,16 @@ const Application = class extends ComponentTable {
     canvas.style.width = '100%'
     return new Canvas(canvas)
   }
-  loop() {
+  loop(skip = false) {
     this.canvas.reset(window.innerWidth, window.innerHeight)
-    this.render(this.canvas, 0, 0, window.innerWidth, window.innerHeight)
+    this.render(this.canvas, window.innerWidth, window.innerHeight)
     this.canvas.mouse(this.mc, 0, 0, window.innerWidth, window.innerHeight)
     if (this.mc.owned) {
       this.canvas.cursor('default')
     }
     //this.mouse.clear()
-    requestAnimationFrame(() => this.loop())
+    if (!skip)
+      requestAnimationFrame(() => this.loop())
   }
 }
 
