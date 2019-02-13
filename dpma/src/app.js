@@ -11,9 +11,9 @@ const Component = class {
     console.warn('Component missing render function!', this)
   }
   renderAbsolute(c, x, y, width, height) {
-    c.clipRect(x, y, width, height)
+    c.clip(x, y, width, height)
     this.render(c, width, height)
-    c.clipPop()
+    c.pop()
   }
 }
 
@@ -52,6 +52,8 @@ const ComponentTable = class extends Component {
               after.size -= dxBy
               after.mc.dx -= dxBy
             }
+          } else {
+            after.mc.dx = 0
           }
         }
       }
@@ -85,6 +87,8 @@ const ComponentTable = class extends Component {
               after.size -= dyBy
               after.mc.dy -= dyBy
             }
+          } else {
+            after.mc.dy = 0
           }
         }
       }
@@ -166,17 +170,44 @@ const Console = class extends Component {
 const EntityBox = class extends Component {
   constructor(parent) {
     super(parent)
+    this.camera = { x: 0, y: 0, zoom: 0.2 }
+    this.mc = {}
   }
   render(c, width, height) {
+    c.mouse(this.mc, 0, 0, width, height)
+    if (this.mc.owned) {
+      if (this.mc.left) {
+        c.cursor('move')
+        this.camera.x += this.mc.dx
+        this.camera.y += this.mc.dy
+      } else {
+        c.cursor('default')
+      }
+      this.camera.zoom *= Math.pow(0.9, this.mc.scroll)
+      this.mc.dx = 0
+      this.mc.dy = 0
+      this.mc.scroll = 0
+    }
+
     c.fill('#f7f7f7')
     c.rect(0, 0, width, height)
+
     c.fill('#c4c4c4')
-    c.rect(Math.floor(width / 2), 0, 2, height)
-    c.rect(0, Math.floor(height / 2), width, 2)
-    c.rect(Math.floor(width / 2) - 250, Math.floor(height / 2) - 250, 2, 500)
-    c.rect(Math.floor(width / 2) - 250, Math.floor(height / 2) - 250, 500, 2)
-    c.rect(Math.floor(width / 2) + 250, Math.floor(height / 2) - 250, 2, 500)
-    c.rect(Math.floor(width / 2) - 250, Math.floor(height / 2) + 250, 500, 2)
+
+    c.rectLineHorizontal(0, width, this.camera.y + Math.floor(height / 2), 2)
+    c.rectLineVertical(this.camera.x + Math.floor(width / 2), 0, height, 2)
+    c.translate(Math.floor(width / 2) + this.camera.x, Math.floor(height / 2) + this.camera.y)
+
+    let left = -1250 * this.camera.zoom
+    let right = 1250 * this.camera.zoom
+    let top = -1250 * this.camera.zoom
+    let bottom = 1250 * this.camera.zoom
+
+    c.rectLineHorizontal(left, right, top, 2)
+    c.rectLineHorizontal(left, right, bottom, 2)
+    c.rectLineVertical(left, top, bottom, 2)
+    c.rectLineVertical(right, top, bottom, 2)
+
     c.font(10)
     c.fill('#36363e')
     let entities = $(0x10a7c).$vector.map($entity => {
@@ -189,11 +220,13 @@ const EntityBox = class extends Component {
     for (let { x, y, id } of entities) {
       if (newestId === id)
         c.fill('#3636cf')
-      c.circle(x / 5 + width / 2, y / 5 + height / 2, 3)
-      c.text(`(${ Math.round(x) }, ${ Math.round(y) })`, x / 5 + width / 2 + 5, y / 5 + height / 2, 5)
+      c.circle(x * this.camera.zoom, y * this.camera.zoom, 3)
+      c.text(`(${ Math.round(x) }, ${ Math.round(y) })`, x * this.camera.zoom + 5, y * this.camera.zoom, 5)
       if (newestId === id)
         c.fill('#36363e')
     }
+
+    c.pop()
 /*$(0x10a7c).$vector.map(r => {
   if (r[0x48].f32 && r[0x28].f32)
     r[0x48].f32 = r[0x28].f32

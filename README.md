@@ -14,17 +14,19 @@ If you make any discoveries, pull requests are welcome! You can also message me 
 
 All of the userscripts are found in the `userscripts` folder, but you can also install them by just clicking. They all should be able to run in harmony, with the exception of `dpma.js`, which should not be combined with `hexedit.js` or `diep-pl.js`.
 
-- [`dpma.js`](https://raw.githubusercontent.com/cx88/diepssect/master/dpma/dpma.user.js) - A WIP script that allows both editing memory and packets.
-- [`diep-pl.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/diep-pl.user.js) - A diep packer logger, used for deciphering the protocol.
-- [`hexedit.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/hexedit.user.js) - A script that allows memory editing.
-- [`injector.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/injector.user.js) - A script that inject itself into diep's `build_*.js` for exporting and replacing variables.
-- [`nsfsk.js`](https://raw.githubusercontent.com/cx88/diepssect/master/userscripts/nsfsk.user.js) - Test script. Currently does nothing.
+https://cx88.github.io/diepssect/dpma/dpma.user.js
+
+- [`dpma.js`](https://cx88.github.io/diepssect/dpma/dpma.user.js) - A WIP script that allows both editing memory and packets.
+- [`diep-pl.js`](https://cx88.github.io/diepssect/userscripts/diep-pl.user.js) - A diep packer logger, used for deciphering the protocol.
+- [`hexedit.js`](https://cx88.github.io/diepssect/userscripts/hexedit.user.js) - A script that allows memory editing.
+- [`injector.js`](https://cx88.github.io/diepssect/userscripts/injector.user.js) - A script that inject itself into diep's `build_*.js` for exporting and replacing variables.
+- [`nsfsk.js`](https://cx88.github.io/diepssect/userscripts/nsfsk.user.js) - Test script. Currently does nothing.
 
 There are other browser or node.js scripts, which can be found in the `scripts` folder.
 
 ## Protocol
 
-You can find `userscripts/diep-pl.js` and use it in TemperMonkey. Press F12 to view all short cuts, but it include features like Alt+Z to dump log to console.
+You can get `diep-pl.js` and use it in TemperMonkey. Press F12 to view all short cuts, but it include features like Alt+Z to dump log to console.
 
 ### Encodings
 
@@ -105,11 +107,13 @@ Aside from the generated `bundle_*.js` (formerly `d.js`), diep also have `c.js` 
 
 ## Memory editing
 
-You can find `userscripts/hexedit.js` and use it in TemperMonkey. Six vectors with static memory addresses have been included, and you can find their information in the comments.
+You can get `hexedit.js` and use it in TemperMonkey. Six vectors with static memory addresses have been included, and you can find their information in the comments.
 
 ## Physics
 
-You can find `userscripts/diep-pl.js` and use it in TemperMonkey. Press F12 to view all short cuts, but it include features like Alt+X to pause updated, Alt+Q to view motion frame by frame, and Alt+M to enable debug mode which show raw health up to 6 digits.
+You can get `diep-pl.js` and use it in TemperMonkey. Press F12 to view all short cuts, but it include features like Alt+X to pause updated, Alt+Q to view motion frame by frame, and Alt+M to enable debug mode which show raw health up to 6 digits.
+
+Although `dpma.js` will replace `diep-pl.js` eventually, currently you can combine both scripts and the entity box should work and display all visible entities. The entity with the highest ID, which is usually the last created entity, will be blue. You'll need to ignore the hidden entities near the center, which are your barrels.
 
 Here's a very useful page with lots of stuff about diep's physics.
 - https://spade-squad.com/physics.html

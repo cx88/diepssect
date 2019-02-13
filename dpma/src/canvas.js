@@ -70,26 +70,45 @@ const Canvas = class {
       else if (e.button === 2)
         mouseAt.right = false
     }, false)
-    canvas.addEventListener('wheel', e => {
+    canvas.addEventListener('mousewheel', e => {
       if (this.mc) {
-        this.mc.scroll += e.deltaY
+        this.mc.scroll += e.wheelDelta / -120 || e.detail || 0
       }
     }, false)
+  }
+  clip(x, y, w, h) {
+    let last = this.translates[this.translates.length - 1]
+    this.translates.push({ x: x + last.x, y: y + last.y })
+    this.ctx.save()
+    this.ctx.translate(x, y)
+    this.ctx.beginPath()
+    this.ctx.rect(0, 0, w, h)
+    this.ctx.clip()
+  }
+  translate(x, y) {
+    let last = this.translates[this.translates.length - 1]
+    this.translates.push({ x: x + last.x, y: y + last.y })
+    this.ctx.save()
+    this.ctx.translate(x, y)
+  }
+  pop() {
+    this.ctx.restore()
+    this.translates.pop()
   }
   mouse(mc, x, y, w, h, check = null) {
     let t = this.translates[this.translates.length - 1]
     x += t.x
     y += t.y
-    if (this.mc && this.mc !== mc) return null
+    if (this.mc && this.mc !== mc) return
     let mi = this.mouseAt.x >= x && this.mouseAt.x < x + w
           && this.mouseAt.y >= y && this.mouseAt.y < y + h
     mc.hover = mi && (!check || check(this.mouseAt))
     let isOwned = mc.hover || this.mc
-    if (!isOwned) return null
+    if (!isOwned) return
     if (isOwned && !mc.owned) {
-      mc.dx = 0
-      mc.dy = 0
-      mc.scroll = 0
+      mc.dx = mc.dx || 0
+      mc.dy = mc.dy || 0
+      mc.scroll = mc.scroll || 0
       mc.owned = true
     }
 
@@ -101,8 +120,8 @@ const Canvas = class {
   }
   reset(width, height) {
     if (this.mc && !this.mc.left) {
-      this.mc.owned = null
-      this.mc.hover = null
+      this.mc.owned = false
+      this.mc.hover = false
       this.mc = null
     }
 
@@ -121,19 +140,6 @@ const Canvas = class {
   cursor(cursor) {
     this.canvas.style.cursor = cursor
   }
-  clipRect(x, y, w, h) {
-    let last = this.translates[this.translates.length - 1]
-    this.translates.push({ x: x + last.x, y: y + last.y })
-    this.ctx.save()
-    this.ctx.translate(x, y)
-    this.ctx.beginPath()
-    this.ctx.rect(0, 0, w, h)
-    this.ctx.clip()
-  }
-  clipPop() {
-    this.ctx.restore()
-    this.translates.pop()
-  }
   fill(color) {
     this.ctx.fillStyle = color
   }
@@ -142,6 +148,12 @@ const Canvas = class {
   }
   rect(x, y, w, h) {
     this.ctx.fillRect(x, y, w, h)
+  }
+  rectLineVertical(x, y1, y2, t) {
+    this.ctx.fillRect(x - t / 2, y1, t, y2 - y1)
+  }
+  rectLineHorizontal(x1, x2, y, t) {
+    this.ctx.fillRect(x1, y - t / 2, x2 - x1, t)
   }
   image(source, x, y, w, h) {
     this.ctx.drawImage(source, x, y, w, h)
