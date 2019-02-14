@@ -176,14 +176,23 @@ const EntityBox = class extends Component {
   render(c, width, height) {
     c.mouse(this.mc, 0, 0, width, height)
     if (this.mc.owned) {
-      if (this.mc.left) {
+      if (this.mc.left)
         c.cursor('move')
-        this.camera.x += this.mc.dx
-        this.camera.y += this.mc.dy
-      } else {
+      else
         c.cursor('default')
+
+      if (this.mc.left || this.mc.scroll !== 0) {
+        let zoom = Math.pow(0.85, this.mc.scroll)
+        let mx = this.mc.x - width / 2
+        let my = this.mc.y - height / 2
+
+        let ax = (this.mc.left ? this.mc.dx / this.camera.zoom : 0) - mx / this.camera.zoom
+        let ay = (this.mc.left ? this.mc.dy / this.camera.zoom : 0) - my / this.camera.zoom
+        this.camera.zoom = Math.constrain(0.01, 2, this.camera.zoom * zoom)
+        this.camera.x += ax + mx / this.camera.zoom
+        this.camera.y += ay + my / this.camera.zoom
       }
-      this.camera.zoom *= Math.pow(0.9, this.mc.scroll)
+
       this.mc.dx = 0
       this.mc.dy = 0
       this.mc.scroll = 0
@@ -194,9 +203,9 @@ const EntityBox = class extends Component {
 
     c.fill('#c4c4c4')
 
-    c.rectLineHorizontal(0, width, this.camera.y + Math.floor(height / 2), 2)
-    c.rectLineVertical(this.camera.x + Math.floor(width / 2), 0, height, 2)
-    c.translate(Math.floor(width / 2) + this.camera.x, Math.floor(height / 2) + this.camera.y)
+    c.rectLineHorizontal(0, width, this.camera.y * this.camera.zoom + Math.floor(height / 2), 2)
+    c.rectLineVertical(this.camera.x * this.camera.zoom + Math.floor(width / 2), 0, height, 2)
+    c.translate(Math.floor(width / 2) + this.camera.x * this.camera.zoom, Math.floor(height / 2) + this.camera.y * this.camera.zoom)
 
     let left = -1250 * this.camera.zoom
     let right = 1250 * this.camera.zoom
