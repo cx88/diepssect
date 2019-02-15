@@ -1,3 +1,5 @@
+const Injector = require('./injector.js')
+
 let getter = ({ ptr }, prop) => {
   let {
     Module: {

@@ -3,6 +3,8 @@ const Canvas = require('./canvas.js')
 const Math = require('./math.js')
 const $ = require('./pointer.js')
 
+const CHEAT_MODE = localStorage['actually know javascript'] === 'yes'
+
 const Component = class {
   constructor(parent) {
     this.parent = [parent, ...parent.parent]
@@ -207,10 +209,30 @@ const EntityBox = class extends Component {
     c.rectLineVertical(this.camera.x * this.camera.zoom + Math.floor(width / 2), 0, height, 2)
     c.translate(Math.floor(width / 2) + this.camera.x * this.camera.zoom, Math.floor(height / 2) + this.camera.y * this.camera.zoom)
 
-    let left = -1250 * this.camera.zoom
-    let right = 1250 * this.camera.zoom
-    let top = -1250 * this.camera.zoom
-    let bottom = 1250 * this.camera.zoom
+
+    let $arena = $(0x10a58).$vector[0]
+    let arena = $arena ? {
+      arenaRight: $arena[0xd8].f32,
+      leaderScore: $arena[0x180].f32,
+      leaderX: $arena[0x228].f32,
+      arenaTop: $arena[0x230].f32,
+      arenaBottom: $arena[0x290].f32,
+      leaderY: $arena[0x298].f32,
+      arenaLeft: $arena[0x2a0].f32,
+    } : {
+      arenaRight: 0,
+      leaderScore: 0,
+      leaderX: 0,
+      arenaTop: 0,
+      arenaBottom: 0,
+      leaderY: 0,
+      arenaLeft: 0,
+    }
+
+    let left = arena.arenaLeft * this.camera.zoom
+    let right = arena.arenaRight * this.camera.zoom
+    let top = arena.arenaTop * this.camera.zoom
+    let bottom = arena.arenaBottom * this.camera.zoom
 
     c.rectLineHorizontal(left, right, top, 2)
     c.rectLineHorizontal(left, right, bottom, 2)
@@ -230,11 +252,15 @@ const EntityBox = class extends Component {
       if (newestId === id)
         c.fill('#3636cf')
       c.circle(x * this.camera.zoom, y * this.camera.zoom, 3)
-      c.text(`(${ Math.round(x) }, ${ Math.round(y) })`, x * this.camera.zoom + 5, y * this.camera.zoom, 5)
+      c.text(`(${ Math.round(x) }, ${ Math.round(y) })`, x * this.camera.zoom + 5, y * this.camera.zoom + 4, 5)
       if (newestId === id)
         c.fill('#36363e')
     }
-
+    if (arena.leaderX !== 0 || arena.leaderY !== 0) {
+      c.fill('#ff3202')
+      c.circle(arena.leaderX * this.camera.zoom, arena.leaderY * this.camera.zoom, 3)
+      c.text(`(${ arena.leaderX.toFixed(4) }, ${ arena.leaderY.toFixed(4) })`, arena.leaderX * this.camera.zoom + 5, arena.leaderY * this.camera.zoom - 8, 5)
+    }
     c.pop()
 /*$(0x10a7c).$vector.map(r => {
   if (r[0x48].f32 && r[0x28].f32)
@@ -309,10 +335,17 @@ const DiepCanvas = class extends Component {
         } else {
           input.keyUp(3)
         }
+
+        if (CHEAT_MODE && this.mc.scroll !== 0) {
+          let zoom = Math.pow(0.85, this.mc.scroll)
+          $(0x10a70).$vector[0][11 * 4].f32 *= zoom
+        }
+        this.mc.scroll = 0
       } else {
         input.keyUp(1)
         input.keyUp(3)
       }
+
     let source = window.canvas
     if (this.mode === 1) {
       c.image(source, x, y, width, height)
@@ -378,7 +411,6 @@ const Application = class extends ComponentTable {
     if (this.mc.owned) {
       this.canvas.cursor('default')
     }
-    //this.mouse.clear()
     if (!skip)
       requestAnimationFrame(() => this.loop())
   }

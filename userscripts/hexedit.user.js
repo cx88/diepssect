@@ -433,7 +433,6 @@ const Injector = window.Injector = window.Injector || (() => {
   }
 
   let focusOnto = (at, length, multiple = 1) => {
-    if (at === null) return
     if (Array.isArray(at)) {
       for (let i of at) {
         let start = i * multiple
@@ -441,14 +440,15 @@ const Injector = window.Injector = window.Injector || (() => {
         bookmarks.push([ start, end, 'unknown' ])
       }
       return
-    }
-    at *= multiple
-    length *= multiple
-    if (at >= 0x4000000) return
-    realOffsetY = at / 16 * LINE_HEIGHT - (height - drawerHeight - LINE_HEIGHT * 2) / 2
-    focusPointer = at
-    if (length) {
-      focusPointerSelection = [focusPointer, focusPointer + length, 0]
+    } else if (typeof at === 'number' && !Number.isNaN(at)) {
+      at *= multiple
+      length *= multiple
+      if (at >= 0x4000000) return
+      realOffsetY = at / 16 * LINE_HEIGHT - (height - drawerHeight - LINE_HEIGHT * 2) / 2
+      focusPointer = at
+      if (length) {
+        focusPointerSelection = [focusPointer, focusPointer + length, 0]
+      }
     }
   }
 
