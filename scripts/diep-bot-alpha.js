@@ -208,9 +208,9 @@ let linkParse = link => {
 let monitor = async (msg, bots) => {
   let reply = await msg.reply('Connecting...')
 
-  let oldStatus = null
+  let status = null
   let clear = setInterval(() => {
-    let newStatus = `Status:  ${
+    let statusTo = `Status:  ${
       bots.filter(r => r.status === 0).length
     }T / ${
       bots.filter(r => r.status === 1).length
@@ -222,8 +222,10 @@ let monitor = async (msg, bots) => {
       bots.length
     } total)`
 
-    if (oldStatus !== newStatus)
-      reply.edit(newStatus)
+    if (status !== statusTo) {
+      status = statusTo
+      reply.edit(status)
+    }
     if (bots.length === 0)
       clearInterval(clear)
   }, 2000)
