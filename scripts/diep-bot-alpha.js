@@ -332,17 +332,21 @@ let commands = {
   async remove({ args: [id], commander, msg }) {
     id = id.id()
     if (id === 'ALL') {
-      for (let bot of commander.bots.slice())
-        bot.remove()
-      msg.reply('Removed all bots.')
-      return
-    }
-    let bot = commander.bots.find(r => r.id === id)
-    if (bot) {
-      bot.remove()
-      msg.reply('Removed bot.')
+      if (commander.bots.length) {
+        for (let bot of commander.bots.slice())
+          bot.remove()
+        msg.reply('Removed all bots.')
+      } else {
+        msg.reply('No bots found!')
+      }
     } else {
-      msg.reply('Bot not found!')
+      let bot = commander.bots.find(r => r.id === id)
+      if (bot) {
+        bot.remove()
+        msg.reply('Removed bot.')
+      } else {
+        msg.reply('Bot not found!')
+      }
     }
   },
   async party({ args: [link], commander, msg }) {
