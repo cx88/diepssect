@@ -5,8 +5,7 @@ const IpAlloc = require('./ip-alloc.js')
 const EventEmitter = require('events')
 const { Reader, Writer } = require('./coder')
 
-const { PREFIX, TOKEN, IP_TEMPLATE } = require('../config.json')
-const BUILD = '9b9e4489cd499ded99cca19f4784fc929d21fc35'
+const { PREFIX, TOKEN, IP_TEMPLATE, BUILD } = require('../config.json')
 
 const WriterSending = class extends Writer {
   constructor(socket) {
@@ -69,7 +68,7 @@ const Commander = class {
   }
   get maximum() {
     let perm = this.id === '239162248990294017' ? 3 : 0
-    return [10, 40, 200, 1000][perm]
+    return [8, 64, 256, 1024][perm]
   }
   createBotUnchecked() {
     let id
@@ -411,7 +410,7 @@ let commands = {
 let bot = new Discord.Client()
 let commanders = {}
 bot.on('message', msg => {
-  if (!msg.content.startsWith(PREFIX)) return
+  if (!msg.content.startsWith(PREFIX) || msg.author.bot) return
   let argsArray = msg.content.slice(PREFIX.length).trim().split(/\s+/)
   let command = commands[argsArray.shift()]
 

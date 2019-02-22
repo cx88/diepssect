@@ -157,7 +157,7 @@ const Scrollable = class extends Component {
   }
 }
 
-const Console = class extends Component {
+const DemoBox = class extends Component {
   constructor(parent) {
     super(parent)
   }
@@ -386,7 +386,7 @@ const Application = class extends ComponentTable {
     this.diepCanvas = this.createChild(DiepCanvas)
     this.controller = this.createChild(ComponentTable, false, true)
     this.controller.createChild(EntityBox)
-    this.controller.createChild(Console)
+    this.controller.createChild(DemoBox)
     this.resizeChildren([3, 1])
     this.loop()
     this.canvas.canvas.addEventListener('mousemove', e => {
