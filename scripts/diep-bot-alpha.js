@@ -1,8 +1,9 @@
 const http = require('http')
+const util = require('util')
 const WebSocket = require('ws')
 const Discord = require('discord.js')
-const IpAlloc = require('./ip-alloc.js')
 const EventEmitter = require('events')
+const IpAlloc = require('./ip-alloc.js')
 const { Reader, Writer } = require('./coder')
 
 const { PREFIX, TOKEN, IP_TEMPLATE, BUILD } = require('../config.json')
@@ -66,9 +67,22 @@ const Commander = class {
     this.id = id
     this.bots = []
   }
-  get maximum() {
+  get perm() {
     let perm = this.id === '239162248990294017' ? 3 : 0
-    return [8, 64, 256, 1024][perm]
+    let server = bot.guilds.get('251478385350410241')
+    if (server && server.members.has(this.id)) {
+      for (let [level, id] of [
+        [3, '283013720366383113'],
+        [2, '548967042896625754'],
+        [1, '548960895066177577'],
+      ])
+        if (server.members.get(this.id).roles.has(id) && level > perm)
+          perm = level
+    }
+    return perm
+  }
+  get maximum() {
+    return 10 * 4 ** this.perm
   }
   createBotUnchecked() {
     let id
@@ -389,6 +403,29 @@ let commands = {
       sockets.push(ws)
     }, 100)
   },
+  async eval({ args: [script], commander, msg }) {
+    if (commander.perm < 3) return
+    let out = null
+    try {
+      out = eval(script.rest())
+    } catch(e) {
+      out = e
+    }
+    try {
+      out = util.inspect(out, {
+        depth: 2,
+        maxArrayLength: 30,
+        breakLength: 120,
+      })
+    } catch(e) {
+      try {
+        out = `[${ typeof out }] ${ out }`
+      } catch(e) {
+        out = `[${ typeof out }]`
+      }
+    }
+    msg.channel.send('Output: ```js\n' + out + '```', { split: { prepend: '```js\n', append: '```' } })
+  },
   async help({ msg }) {
     msg.reply([
       'List of commands:',
@@ -411,39 +448,49 @@ let bot = new Discord.Client()
 let commanders = {}
 bot.on('message', msg => {
   if (!msg.content.startsWith(PREFIX) || msg.author.bot) return
-  let argsArray = msg.content.slice(PREFIX.length).trim().split(/\s+/)
-  let command = commands[argsArray.shift()]
+  let argsString = msg.content.slice(PREFIX.length).trim()
 
+  let args = {
+    toString() {
+      let i = argsString.search(/\s+/)
+      if (i === -1) i = argsString.length
+      let segment = argsString.slice(0, i)
+      argsString = argsString.slice(i).trim()
+      return segment
+    },
+    rest() {
+      let rest = argsString
+      argsString = ''
+      return rest
+    },
+    id() { return this.toString().toUpperCase().replace(/[^0-9A-Z]/g, '') },
+    valueOf() { return (+this.toString() || 0) },
+    link() { return linkParse(this.toString()) },
+    integer(minimum = -Infinity, maximum = Infinity) {
+      return Math.min(maximum, Math.max(minimum, Math.floor(+this.toString()) || 0))
+    },
+    async server() {
+      let { id, party, source } = linkParse(this.toString())
+      let server = await findServer(id)
+      server.id = id
+      server.party = party
+      server.source = source
+      return server
+    },
+
+    next() {
+      return {
+        done: false,
+        value: this,
+      }
+    },
+    [Symbol.iterator]: function() { return this },
+  }
+
+  let command = commands[args.toString()]
   if (typeof command !== 'function') {
     msg.reply('Command not found!')
   } else {
-    let args = {
-      next() {
-        let string = argsArray.shift() || ''
-        return {
-          done: false,
-          value: {
-            toString() { return string },
-            id() { return string.toUpperCase().replace(/[^0-9A-Z]/g, '') },
-            valueOf() { return (+string || 0) },
-            link() { return linkParse(string) },
-            integer(minimum = 0) {
-              return Math.max(minimum, Math.floor(+string) || 0)
-            },
-            async server() {
-              let { id, party, source } = linkParse(string)
-              let server = await findServer(id)
-              server.id = id
-              server.party = party
-              server.source = source
-              return server
-            },
-          },
-        }
-      },
-      [Symbol.iterator]: function() { return this },
-    }
-
     let commander = commanders[msg.author.id]
     if (!commander)
       commander = commanders[msg.author.id] = new Commander(msg.author.id)
