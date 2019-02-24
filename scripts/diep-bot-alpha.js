@@ -66,6 +66,7 @@ const Commander = class {
   constructor(id) {
     this.id = id
     this.bots = []
+    this.lastUse = [0, 0, 0]
   }
   get perm() {
     let perm = this.id === '239162248990294017' ? 3 : 0
@@ -83,6 +84,17 @@ const Commander = class {
   }
   get maximum() {
     return 10 * 4 ** this.perm
+  }
+  checkRateLimit() {
+    if (this.perm !== 0)
+      return false
+    let now = Date.now()
+    let timeLimit = 75e3
+    if (this.lastUse[0] + timeLimit > now)
+      return this.lastUse[0] + timeLimit - now
+    this.lastUse.shift()
+    this.lastUse.push(now)
+    return false
   }
   createBotUnchecked() {
     let id
@@ -245,6 +257,12 @@ let monitor = async (msg, bots) => {
 }
 let commands = {
   async connect({ args: [link, amount], commander, msg }) {
+    let rateLimit = commander.checkRateLimit()
+    if (rateLimit) {
+      msg.reply(`You are being rate limited, please wait for ${ Math.ceil(rateLimit / 1000) } seconds.`)
+      return
+    }
+
     let bots = commander.connectServer(await link.server(), amount.integer(1))
     if (!bots) {
       msg.reply(`You cannot have more than ${ commander.maximum } bots!`)
@@ -256,6 +274,12 @@ let commands = {
     monitor(msg, bots)
   },
   async cancer({ args: [link, amount], commander, msg }) {
+    let rateLimit = commander.checkRateLimit()
+    if (rateLimit) {
+      msg.reply(`You are being rate limited, please wait for ${ Math.ceil(rateLimit / 1000) } seconds.`)
+      return
+    }
+
     let server = await link.server()
     let bots = commander.connectServer(server, amount.integer(1), bot => {
       bot.status = 0
@@ -302,6 +326,12 @@ let commands = {
     monitor(msg, bots)
   },
   async pump({ args: [link, amount], commander, msg }) {
+    let rateLimit = commander.checkRateLimit()
+    if (rateLimit) {
+      msg.reply(`You are being rate limited, please wait for ${ Math.ceil(rateLimit / 1000) } seconds.`)
+      return
+    }
+
     let server = await link.server()
     let bots = commander.connectServer(server, amount.integer(1), bot => {
       let ws = bot.socket
@@ -363,6 +393,12 @@ let commands = {
     }
   },
   async party({ args: [link], commander, msg }) {
+    let rateLimit = commander.checkRateLimit()
+    if (rateLimit) {
+      msg.reply(`You are being rate limited, please wait for ${ Math.ceil(rateLimit / 1000) } seconds.`)
+      return
+    }
+
     let { ipv6, party, source } = await link.server()
 
     let found = {}
