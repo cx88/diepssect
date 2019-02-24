@@ -159,9 +159,11 @@ const Commander = class {
       ws.send().vu(5).done()
       ws.send().vu(0).string(BUILD).string('').string(party).string('').done()
     })
+    ws.on('message', () => {
+      ws.send().vu(1).vu(0b100000000000 | Math.round(Math.random())).vf(0).vf(0).done()
+    })
     ws.on('close', () => {
       bot.status = 2
-      ws.send().vu(1).vu(0b100000000000 | Math.round(Math.random())).vf(0).vf(0).done()
     })
     ws.on('error', () => {
       bot.status = 3
@@ -200,6 +202,20 @@ let ipAlloc = new IpAlloc(IP_TEMPLATE)
 
 let findServer = id => new Promise((resolve, reject) => {
   http.get(`http://api.n.m28.io/server/${ id }`, res => {
+    let data = ''
+    res.on('data', chunk => data += chunk)
+    res.on('end', () => {
+      try {
+        resolve(JSON.parse(data))
+      } catch(e) {
+        reject(e)
+      }
+    })
+  }).on('error', reject)
+})
+
+let findAnyServer = mode => new Promise((resolve, reject) => {
+  http.get(`http://api.n.m28.io/endpoint/diepio-${ mode }/findEach/`, res => {
     let data = ''
     res.on('data', chunk => data += chunk)
     res.on('end', () => {
@@ -256,6 +272,44 @@ let monitor = async (msg, bots) => {
   }, 2000)
 }
 let commands = {
+  async create({ args: [region], commander, msg }) {
+    let server = await region.regionServer()
+    let bots = commander.connectServer(server, 1, bot => {
+      let ws = bot.socket
+      ws.on('open', () => {
+        bot.status = 1
+        ws.send().vu(5).done()
+        ws.send().vu(0).string(BUILD).string('').string('').string('').done()
+      })
+      ws.on('message', r => {
+        if (r.vu() !== 6) return
+        let id = (server.id + '\x00').split('').map(r => r.charCodeAt(0).toString(16).padStart(2, '0').toUpperCase().split('').reverse().join('')).join('')
+        let link = Array.from(r.flush()).map(r => r.toString(16).padStart(2, '0').toUpperCase().split('').reverse().join('')).join('')
+        msg.reply(`http://diep.io/#${ id }${ link }`)
+      })
+      ws.on('close', () => {
+        bot.status = 2
+      })
+      ws.on('error', () => {
+        bot.status = 3
+      })
+    })
+
+    for (let bot of bots) {
+      bot.renew(60000)
+    }
+
+    if (!bots) {
+      msg.reply(`You cannot have more than ${ commander.maximum } bots!`)
+    } else if (bots.ipOutage) {
+      msg.reply('Note: ran out of IPs!')
+    }
+  },
+  async regions({ args: [mode], commander, msg }) {
+    let modeString = mode.toString()
+    let { servers } = await findAnyServer(modeString)
+    msg.reply(`Regions for ${ modeString }:\n` + Object.keys(servers).map(r => `- ${ r }:${ modeString }:`).join('\n'))
+  },
   async connect({ args: [link, amount], commander, msg }) {
     let rateLimit = commander.checkRateLimit()
     if (rateLimit) {
@@ -288,23 +342,32 @@ let commands = {
       ws.on('open', () => {
         bot.status = 1
         ws.send().vu(0).string(BUILD).string('').string(server.party).string('').done()
-        ws.send().vu(2).string('Cancer Bot').done()
         let frameCount = 0
+        ws.send().vu(2).string('Cancer Bot').done()
         int = setInterval(() => {
+          ws.send().vu(2).string('Cancer Bot').done()
           let flags = 0b100100000001
           let upgrade = null
           if (frameCount === 48) {
             upgrade = 18
           } else if (frameCount === 49) {
             upgrade = 32
-          } else if (frameCount >= 50 && frameCount % 2 === 0) {
+          } else if (frameCount >= 50 && frameCount % 20 === 0) {
             upgrade = 94
+            flags |= 0b010000000000
+            ws.send().vu(3).vi(0).vi(5).done()
+            ws.send().vu(3).vi(1).vi(7).done()
+            ws.send().vu(3).vi(2).vi(7).done()
+            ws.send().vu(3).vi(4).vi(7).done()
+            ws.send().vu(3).vi(5).vi(7).done()
           } else {
+            upgrade = 94
             flags |= 0b010000000000
           }
           if (upgrade !== null)
             ws.send().vu(4).i8(upgrade).done()
-          ws.send().vu(1).vu(flags).vf(0).vf(0).done()
+          let now = Date.now() / 1000
+          ws.send().vu(1).vu(flags).vf(Math.cos(now) * 1000000).vf(Math.sin(now) * 1000000).done()
           frameCount++
         }, 30)
       })
@@ -465,6 +528,8 @@ let commands = {
   async help({ msg }) {
     msg.reply([
       'List of commands:',
+      '- create <region-mode code>              Connect and get a party link if one exists given its region-mode code',
+      '- regions <region>                                  Get a list of region-mode codes for a game mode (game mode can be ffa, survival, teams, 4teams, dom, tag, maze, or sandbox)',
       '- connect <party link> [amount]        Connect to a diep server, used to expand arena',
       '- pump <party link> [amount]            Connect to a diep server and immediately leave',
       '- list                                                           List your bots with their ID and status',
@@ -507,11 +572,22 @@ bot.on('message', msg => {
     },
     async server() {
       let { id, party, source } = linkParse(this.toString())
+      if (!id)
+        throw new Error('Missing server ID!')
       let server = await findServer(id)
       server.id = id
       server.party = party
       server.source = source
       return server
+    },
+    async regionServer() {
+      let [region, mode] = this.toString().split(':')
+      if (!region || !mode)
+        throw new Error('Missing region or mode!')
+      let { servers } = await findAnyServer(mode)
+      if (!servers[region])
+        throw new Error('Server not found!')
+      return servers[region]
     },
 
     next() {
