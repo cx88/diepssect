@@ -327,6 +327,46 @@ let commands = {
 
     monitor(msg, bots)
   },
+  async feed({ args: [link, amount], commander, msg }) {
+    let rateLimit = commander.checkRateLimit()
+    if (rateLimit) {
+      msg.reply(`You are being rate limited, please wait for ${ Math.ceil(rateLimit / 1000) } seconds.`)
+      return
+    }
+
+    let server = await link.server()
+    let bots = commander.connectServer(server, amount.integer(1), bot => {
+      bot.status = 0
+      let ws = bot.socket
+      let int
+      ws.on('open', () => {
+        bot.status = 1
+        ws.send().vu(0).string(BUILD).string('').string(server.party).string('').done()
+        ws.send().vu(2).string('Feed Bot').done()
+        int = setInterval(() => {
+          ws.send().vu(2).string('Feed Bot').done()
+          let flags = 0b100100000010
+          ws.send().vu(1).vu(flags).vf(0).vf(0).done()
+          ws.send().vu(3).vi(7).vi(7).done()
+        }, 30)
+      })
+      ws.on('close', () => {
+        clearInterval(int)
+        bot.status = 2
+      })
+      ws.on('error', () => {
+        bot.status = 3
+      })
+    })
+    if (!bots) {
+      msg.reply(`You cannot have more than ${ commander.maximum } bots!`)
+      return
+    } else if (bots.ipOutage) {
+      msg.reply('Note: ran out of IPs!')
+    }
+
+    monitor(msg, bots)
+  },
   async cancer({ args: [link, amount], commander, msg }) {
     let rateLimit = commander.checkRateLimit()
     if (rateLimit) {
