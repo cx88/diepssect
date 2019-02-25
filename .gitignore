@@ -2,3 +2,4 @@ node_modules
 app.wasm
 app.wat
 config.json
+test.js

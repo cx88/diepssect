@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/cx88/diepssect#readme",
   "dependencies": {
-    "discord.js": "^11.4.2",
+    "discord.js": "github:discordjs/discord.js#11.4-dev",
     "ws": "^6.1.2"
   }
 }

@@ -6,7 +6,7 @@ const EventEmitter = require('events')
 const IpAlloc = require('./ip-alloc.js')
 const { Reader, Writer } = require('./coder')
 
-const { PREFIX, TOKEN, IP_TEMPLATE, BUILD } = require('../config.json')
+const { PREFIX, TOKEN, SET_PLAYING, IP_TEMPLATE, BUILD } = require('../config.json')
 
 const WriterSending = class extends Writer {
   constructor(socket) {
@@ -61,6 +61,7 @@ const IRWSocket = class extends EventEmitter {
     Error.captureStackTrace(this, GoodError)
   }
 }*/
+let parties = {}
 
 const Commander = class {
   constructor(id) {
@@ -69,13 +70,14 @@ const Commander = class {
     this.lastUse = [0, 0, 0]
   }
   get perm() {
-    let perm = this.id === '239162248990294017' ? 3 : 0
+    let perm = this.id === '239162248990294017' ? 5 : 0
     let server = bot.guilds.get('251478385350410241')
     if (server && server.members.has(this.id)) {
       for (let [level, id] of [
-        [3, '283013720366383113'],
-        [2, '548967042896625754'],
-        [1, '548960895066177577'],
+        [4, '283013720366383113'], // CX
+        [3, '548967042896625754'], // Tier 3
+        [2, '548960895066177577'], // Trusted
+        [1, '251478385350410241'], // @everyone
       ])
         if (server.members.get(this.id).roles.has(id) && level > perm)
           perm = level
@@ -83,20 +85,20 @@ const Commander = class {
     return perm
   }
   get maximum() {
-    return 10 * 4 ** this.perm
+    return 4 + 2 * 2 ** 2 ** this.perm
   }
   checkRateLimit() {
     if (this.perm !== 0)
       return false
     let now = Date.now()
-    let timeLimit = 75e3
+    let timeLimit = 60e3
     if (this.lastUse[0] + timeLimit > now)
       return this.lastUse[0] + timeLimit - now
     this.lastUse.shift()
     this.lastUse.push(now)
     return false
   }
-  createBotUnchecked() {
+  createBotUnchecked(party) {
     let id
     do {
       id = Math.floor(Math.random() * 36 ** 4).toString(36).toUpperCase().padStart(4, '0')
@@ -119,8 +121,10 @@ const Commander = class {
             this.group.splice(i, 1)
         }
         let i = self.bots.indexOf(this)
-        if (i !== -1)
+        if (i !== -1) {
           self.bots.splice(i, 1)
+          parties[party]--
+        }
       },
       renew(to) {
         this.expire = Date.now() + to
@@ -134,15 +138,17 @@ const Commander = class {
       bot.remove()
     }, 8 * 60e3)
     this.bots.push(bot)
+    parties[party] = parties[party] ? parties[party] + 1 : 1
     return bot
   }
-  createBot(amount = null) {
-    if (amount === null && this.bots.length + 1 <= this.maximum) {
-      return createBotUnchecked()
-    } else if (amount >= 0 && this.bots.length + amount <= this.maximum) {
+  createBot(amount = null, party) {
+    let inParty = party ? parties[party] || 0 : Infinity
+    if (amount === null && this.bots.length + 1 <= this.maximum && inParty + 1 <= this.maximum) {
+      return createBotUnchecked(party)
+    } else if (amount >= 0 && this.bots.length + amount <= this.maximum && inParty + amount <= this.maximum) {
       let group = []
       for (let i = 0; i < amount; i++) {
-        let bot = this.createBotUnchecked()
+        let bot = this.createBotUnchecked(party)
         bot.group = group
         group.push(bot)
       }
@@ -169,7 +175,7 @@ const Commander = class {
       bot.status = 3
     })
   }) {
-    let bots = this.createBot(amount || 1)
+    let bots = this.createBot(amount || 1, party.length === 12 ? party.toUpperCase() : null)
     if (!bots)
       return null
     for (let bot of bots) {
@@ -543,7 +549,7 @@ let commands = {
     }, 100)
   },
   async eval({ args: [script], commander, msg }) {
-    if (commander.perm < 3) return
+    if (commander.perm < 5) return
     let out = null
     try {
       out = eval(script.rest())
@@ -577,7 +583,8 @@ let commands = {
       '- remove all                                              Remove all of your bots',
       '- party <party link>                                Find all party links given a single link of a team server',
       '',
-      'Note that you are only given 10 bots, so use the remove command when you don\'t need them.',
+      'Note that you are only given a limited number of bots, so use the remove command when you don\'t need them.',
+      'By default you have 8 bots, but you can get more by joining the Discord server.',
       '',
       'Invite to the Discord server: <https://discord.gg/8gvUd3v>',
       'Invite to the bot: <https://discordapp.com/oauth2/authorize?client_id=398241406910726144&scope=bot&permissions=8>',
