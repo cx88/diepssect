@@ -1,5 +1,19 @@
-node_modules
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+
+# Dotfiles
+.*
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
 app.wasm
 app.wat
 config.json
-test.js
