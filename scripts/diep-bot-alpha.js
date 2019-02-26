@@ -571,6 +571,24 @@ let commands = {
     }
     msg.channel.send('Output: ```js\n' + out + '```', { split: { prepend: '```js\n', append: '```' } })
   },
+  async ping({ msg }) {
+    let uptime = Math.round(process.uptime())
+    let out = ''
+    for (let [corner, split, pad] of [[60, '', 2], [60, ':', 2], [24, ':', 2], [7, ' days ', 0], [Infinity, ' weeks ', 0]]) {
+      let unit = uptime % corner
+      uptime = Math.floor(uptime / corner)
+      out = unit.toString().padStart(uptime ? pad : 0, '0') + split.replace(/s/g, unit === 1 ? '' : 's') + out
+      if (!uptime)
+        break
+    }
+    msg.reply('Ping!').then(reply => {
+      reply.edit([
+        `${ msg.author }, Ping!`,
+        `Uptime: ${ out }`,
+        `Latency: ${ reply.createdTimestamp - msg.createdTimestamp }ms`,
+      ].join('\n'))
+    })
+  },
   async help({ msg }) {
     msg.reply([
       'List of commands:',
@@ -594,6 +612,18 @@ let commands = {
 
 let bot = new Discord.Client()
 let commanders = {}
+bot.on('ready', () => {
+  if (SET_PLAYING)
+    bot.user.setPresence({
+      game: { name: `diep.io | ${ PREFIX }help | ${ bot.guilds.size } servers` }
+    })
+})
+bot.on('guildCreate', () => {
+  if (SET_PLAYING)
+    bot.user.setPresence({
+      game: { name: `diep.io | ${ PREFIX }help | ${ bot.guilds.size } servers` }
+    })
+})
 bot.on('message', msg => {
   if (!msg.content.startsWith(PREFIX) || msg.author.bot) return
   let argsString = msg.content.slice(PREFIX.length).trim()
