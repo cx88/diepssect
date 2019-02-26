@@ -142,7 +142,7 @@ const Commander = class {
     return bot
   }
   createBot(amount = null, party) {
-    let inParty = party ? parties[party] || 0 : Infinity
+    let inParty = (party && parties[party]) || 0
     if (amount === null && this.bots.length + 1 <= this.maximum && inParty + 1 <= this.maximum) {
       return createBotUnchecked(party)
     } else if (amount >= 0 && this.bots.length + amount <= this.maximum && inParty + amount <= this.maximum) {
