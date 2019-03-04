@@ -240,7 +240,8 @@ const EntityBox = class extends Component {
     c.rectLineVertical(right, top, bottom, 2)
 
     c.font(10)
-    c.fill('#36363e')
+    let [$ui] = $(0x10a70).$vector
+    let selfId = $ui ? $ui[0x1bc].u32 * 0x10000 + $ui[0x1ba].u16 : 0
     let entities = $(0x10a7c).$vector.map($entity => {
       let x = $entity[0x28].f32
       let y = $entity[0x48].f32
@@ -249,12 +250,9 @@ const EntityBox = class extends Component {
     })
     let newestId = entities.map(r => r.id).reduce((a, b) => a > b ? a : b, -1)
     for (let { x, y, id } of entities) {
-      if (newestId === id)
-        c.fill('#3636cf')
+      c.fill(selfId === id ? '#36cf3e' : newestId === id ? '#3636cf' : '#36363e')
       c.circle(x * this.camera.zoom, y * this.camera.zoom, 3)
       c.text(`(${ Math.round(x) }, ${ Math.round(y) })`, x * this.camera.zoom + 5, y * this.camera.zoom + 4, 5)
-      if (newestId === id)
-        c.fill('#36363e')
     }
     if (arena.leaderX !== 0 || arena.leaderY !== 0) {
       c.fill('#ff3202')
