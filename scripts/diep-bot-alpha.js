@@ -6,7 +6,7 @@ const EventEmitter = require('events')
 const IpAlloc = require('./ip-alloc.js')
 const { Reader, Writer } = require('./coder')
 
-const { PREFIX, TOKEN, SET_PLAYING, IP_TEMPLATE, BUILD } = require('../config.json')
+const { PREFIX, TOKEN, SET_PLAYING, IP_TEMPLATE, BUILD, WEBHOOK_PROCESSOR } = require('../config.json')
 
 const WriterSending = class extends Writer {
   constructor(socket) {
@@ -108,7 +108,7 @@ const Commander = class {
       id,
       socket: null,
       group: null,
-      expire: Date.now() + 8 * 60e3,
+      expire: Date.now() + 60e3,
       remove() {
         this.expire = Date.now()
         clearTimeout(timeout)
@@ -136,7 +136,7 @@ const Commander = class {
     }
     let timeout = setTimeout(() => {
       bot.remove()
-    }, 8 * 60e3)
+    }, 60e3)
     this.bots.push(bot)
     parties[party] = parties[party] ? parties[party] + 1 : 1
     return bot
@@ -302,7 +302,7 @@ let commands = {
     })
 
     for (let bot of bots) {
-      bot.renew(60000)
+      bot.renew(60e3)
     }
 
     if (!bots) {
@@ -329,6 +329,10 @@ let commands = {
       return
     } else if (bots.ipOutage) {
       msg.reply('Note: ran out of IPs!')
+    }
+
+    for (let bot of bots) {
+      bot.renew(4 * 60e3)
     }
 
     monitor(msg, bots)
@@ -369,6 +373,10 @@ let commands = {
       return
     } else if (bots.ipOutage) {
       msg.reply('Note: ran out of IPs!')
+    }
+
+    for (let bot of bots) {
+      bot.renew(8 * 60e3)
     }
 
     monitor(msg, bots)
@@ -430,6 +438,10 @@ let commands = {
       return
     } else if (bots.ipOutage) {
       msg.reply('Note: ran out of IPs!')
+    }
+
+    for (let bot of bots) {
+      bot.renew(8 * 60e3)
     }
 
     monitor(msg, bots)
@@ -600,6 +612,7 @@ let commands = {
       '- remove [id]                                           Remove a bot given its ID',
       '- remove all                                              Remove all of your bots',
       '- party <party link>                                Find all party links given a single link of a team server',
+      '- tos                                                           Display the bot\'s term of service.',
       '',
       'Note that you are only given a limited number of bots, so use the remove command when you don\'t need them.',
       'By default you have 8 bots, but you can get more by joining the Discord server.',
@@ -607,27 +620,16 @@ let commands = {
       'Invite to the Discord server: <https://discord.gg/8gvUd3v>',
       'Invite to the bot: <https://discordapp.com/oauth2/authorize?client_id=398241406910726144&scope=bot&permissions=8>',
     ].join('\n'))
-  }
+  },
+  async tos({ msg }) {
+    msg.reply('**Terms of Service**\n\nBy adding or using this bot on your Discord Server, you agree to let the bot store End User Data of its members, including but not limited to user IDs, usernames, and messages, and use that data for any purpose.')
+  },
 }
 
-let bot = new Discord.Client()
-let commanders = {}
-bot.on('ready', () => {
-  if (SET_PLAYING)
-    bot.user.setPresence({
-      game: { name: `diep.io | ${ PREFIX }help | ${ bot.guilds.size } servers` }
-    })
-})
-bot.on('guildCreate', () => {
-  if (SET_PLAYING)
-    bot.user.setPresence({
-      game: { name: `diep.io | ${ PREFIX }help | ${ bot.guilds.size } servers` }
-    })
-})
-bot.on('message', msg => {
-  if (!msg.content.startsWith(PREFIX) || msg.author.bot) return
-  let argsString = msg.content.slice(PREFIX.length).trim()
+let execWebhook = (msg, embed) => {
 
+}
+let execCommand = (msg, argsString) => {
   let args = {
     toString() {
       let i = argsString.search(/\s+/)
@@ -689,5 +691,33 @@ bot.on('message', msg => {
       console.error(e)
     })
   }
+}
+
+let commanders = {}
+
+let bot = new Discord.Client()
+bot.on('ready', () => {
+  if (SET_PLAYING)
+    bot.user.setPresence({
+      game: { name: `diep.io | ${ PREFIX }help | ${ bot.guilds.size } servers` }
+    })
+})
+bot.on('guildCreate', () => {
+  if (SET_PLAYING)
+    bot.user.setPresence({
+      game: { name: `diep.io | ${ PREFIX }help | ${ bot.guilds.size } servers` }
+    })
+})
+bot.on('guildDelete', () => {
+  if (SET_PLAYING)
+    bot.user.setPresence({
+      game: { name: `diep.io | ${ PREFIX }help | ${ bot.guilds.size } servers` }
+    })
+})
+bot.on('message', msg => {
+  if (msg.channel.id === WEBHOOK_PROCESSOR && msg.embeds.length === 1)
+    execWebhook(msg, msg.embeds[0])
+  else if (msg.content.startsWith(PREFIX) && !msg.author.bot)
+    execCommand(msg, msg.content.slice(PREFIX.length).trim())
 })
 bot.login(TOKEN)
