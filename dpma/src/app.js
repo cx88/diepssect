@@ -29,16 +29,17 @@ const ComponentTable = class extends Component {
     this.size = 0
   }
   render(c, width, height) {
+    let children = this.children.filter(r => !r.hidden)
     let dividerSize = 5
     if (this.horizontal) {
       this.resize(width)
 
-      if (this.resizable) {
-        let start = this.children[0].size
-        for (let i = 1; i < this.children.length; i++) {
-          let before = this.children[i - 1]
-          let after = this.children[i]
-          let nextSize = i === this.children.length - 1
+      if (this.resizable && children.length >= 2) {
+        let start = children[0].size
+        for (let i = 1; i < children.length; i++) {
+          let before = children[i - 1]
+          let after = children[i]
+          let nextSize = i === children.length - 1
             ? dividerSize
             : Math.min(after.size / 2, dividerSize)
           c.mouse(after.mc, start - dividerSize, 0, dividerSize + nextSize, height)
@@ -48,7 +49,7 @@ const ComponentTable = class extends Component {
             if (after.mc.left) {
               let dxBy = Math.constrain(
                 i === 1 ? 10 - before.size : -before.size,
-                i === this.children.length - 1 ? after.size - 10 : after.size,
+                i === children.length - 1 ? after.size - 10 : after.size,
                 after.mc.dx)
               before.size += dxBy
               after.size -= dxBy
@@ -61,19 +62,19 @@ const ComponentTable = class extends Component {
       }
 
       let start = 0
-      for (let { size, child } of this.children) {
+      for (let { size, child } of children) {
         child.renderAbsolute(c, start, 0, size, height)
         start += size
       }
     } else {
       this.resize(height)
 
-      if (this.resizable) {
-        let start = this.children[0].size
-        for (let i = 1; i < this.children.length; i++) {
-          let before = this.children[i - 1]
-          let after = this.children[i]
-          let nextSize = i === this.children.length - 1
+      if (this.resizable && children.length >= 2) {
+        let start = children[0].size
+        for (let i = 1; i < children.length; i++) {
+          let before = children[i - 1]
+          let after = children[i]
+          let nextSize = i === children.length - 1
             ? dividerSize
             : Math.min(after.size / 2, dividerSize)
           c.mouse(after.mc, 0, start - dividerSize, width, dividerSize + nextSize)
@@ -83,7 +84,7 @@ const ComponentTable = class extends Component {
             if (after.mc.left) {
               let dyBy = Math.constrain(
                 i === 1 ? 10 - before.size : -before.size,
-                i === this.children.length - 1 ? after.size - 10 : after.size,
+                i === children.length - 1 ? after.size - 10 : after.size,
                 after.mc.dy)
               before.size += dyBy
               after.size -= dyBy
@@ -96,7 +97,7 @@ const ComponentTable = class extends Component {
       }
 
       let start = 0
-      for (let { size, child } of this.children) {
+      for (let { size, child } of children) {
         child.renderAbsolute(c, 0, 0 + start, width, size)
         start += size
       }
@@ -105,15 +106,22 @@ const ComponentTable = class extends Component {
   createChild(Class, ...args) {
     let child = new Class(this, ...args)
     let size = this.children.length ? Math.floor(this.size / this.children.length) : 1024
-    this.children.push({ child, size, mc: {} })
+    this.children.push({ child, size, hidden: false, mc: {} })
     this.size += size
     return child
   }
   resizeChildren(sizes) {
     let totalSize = 0
     for (let element of this.children) {
-      element.size = sizes.shift() || element.size
-      totalSize += element.size
+      let size = sizes.shift()
+      if (size || size === 0) {
+        element.size = size
+        element.hidden = false
+        totalSize += element.size
+      } else {
+        element.size = 0
+        element.hidden = true
+      }
     }
     this.size = totalSize
   }
@@ -210,7 +218,7 @@ const EntityBox = class extends Component {
     c.translate(Math.floor(width / 2) + this.camera.x * this.camera.zoom, Math.floor(height / 2) + this.camera.y * this.camera.zoom)
 
 
-    let $arena = $(0x10a58).$vector[0]
+    let [$arena] = $(0x10a58).$vector
     let arena = $arena ? {
       arenaRight: $arena[0xd8].f32,
       leaderScore: $arena[0x180].f32,
@@ -242,22 +250,27 @@ const EntityBox = class extends Component {
     c.font(10)
     let [$ui] = $(0x10a70).$vector
     let selfId = $ui ? $ui[0x1bc].u32 * 0x10000 + $ui[0x1ba].u16 : 0
-    let entities = $(0x10a7c).$vector.map($entity => {
+    let entities = $(0x10a7c).$vector.map(($entity, i) => {
+      let sizer = $(0x10a28).$vector[i]
+      let size = sizer ? sizer[0x38].f32 : null
+
       let x = $entity[0x28].f32
       let y = $entity[0x48].f32
       let id = $entity.$[0x38].u32 * 0x10000 + $entity.$[0x36].u16
-      return { x, y, id }
+
+      return { x, y, id, size }
     })
     let newestId = entities.map(r => r.id).reduce((a, b) => a > b ? a : b, -1)
-    for (let { x, y, id } of entities) {
+    for (let { x, y, id, size } of entities) {
       c.fill(selfId === id ? '#36cf3e' : newestId === id ? '#3636cf' : '#36363e')
-      c.circle(x * this.camera.zoom, y * this.camera.zoom, 3)
-      c.text(`(${ Math.round(x) }, ${ Math.round(y) })`, x * this.camera.zoom + 5, y * this.camera.zoom + 4, 5)
+      let radius = Math.max(2, Math.min(400, size) * this.camera.zoom)
+      c.circle(x * this.camera.zoom, y * this.camera.zoom, radius)
+      c.text(`(${ Math.round(x) }, ${ Math.round(y) })`, x * this.camera.zoom + 2 + radius, y * this.camera.zoom)
     }
     if (arena.leaderX !== 0 || arena.leaderY !== 0) {
       c.fill('#ff3202')
-      c.circle(arena.leaderX * this.camera.zoom, arena.leaderY * this.camera.zoom, 3)
-      c.text(`(${ arena.leaderX.toFixed(4) }, ${ arena.leaderY.toFixed(4) })`, arena.leaderX * this.camera.zoom + 5, arena.leaderY * this.camera.zoom - 8, 5)
+      c.circle(arena.leaderX * this.camera.zoom, arena.leaderY * this.camera.zoom, 2)
+      c.text(`(${ arena.leaderX.toFixed(4) }, ${ arena.leaderY.toFixed(4) })`, arena.leaderX * this.camera.zoom + 5, arena.leaderY * this.camera.zoom - 12)
     }
     c.pop()
 /*$(0x10a7c).$vector.map(r => {
@@ -335,10 +348,13 @@ const DiepCanvas = class extends Component {
         }
 
         if (CHEAT_MODE && this.mc.scroll !== 0) {
-          let zoom = Math.pow(0.85, this.mc.scroll)
-          $(0x10a70).$vector[0][11 * 4].f32 *= zoom
+          let [$ui] = $(0x10a70).$vector
+          if ($ui) {
+            let zoom = Math.pow(0.85, this.mc.scroll)
+            $ui[11 * 4].f32 *= zoom
+            this.mc.scroll = 0
+          }
         }
-        this.mc.scroll = 0
       } else {
         input.keyUp(1)
         input.keyUp(3)
@@ -385,6 +401,8 @@ const Application = class extends ComponentTable {
     this.controller = this.createChild(ComponentTable, false, true)
     this.controller.createChild(EntityBox)
     this.controller.createChild(DemoBox)
+    this.controller.createChild(DemoBox)
+    this.controller.resizeChildren([3, 1, 1])
     this.resizeChildren([3, 1])
     this.loop()
     this.canvas.canvas.addEventListener('mousemove', e => {
@@ -415,7 +433,8 @@ const Application = class extends ComponentTable {
 }
 
 
-console.log(`[DPMA] Starting!`)
+console.log(`[DPMA] Injecting...`)
 Injector.getExports().then(() => {
+  console.log(`[DPMA] Starting!`)
   window.dpma = new Application()
 })
