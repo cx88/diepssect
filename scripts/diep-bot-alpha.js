@@ -77,6 +77,7 @@ const Commander = class {
         [4, '283013720366383113'], // CX
         [3, '548967042896625754'], // Tier 3
         [2, '548960895066177577'], // Trusted
+        [2, '553410347852365824'], // Researcher
         [1, '251478385350410241'], // @everyone
       ])
         if (server.members.get(this.id).roles.has(id) && level > perm)
@@ -127,6 +128,8 @@ const Commander = class {
         }
       },
       renew(to) {
+        if (to < 0) to = 0
+        else if (to > 24 * 24 * 60 * 60e3) to = 24 * 24 * 60 * 60e3
         this.expire = Date.now() + to
         clearTimeout(timeout)
         timeout = setTimeout(() => {
@@ -143,9 +146,9 @@ const Commander = class {
   }
   createBot(amount = null, party) {
     let inParty = (party && parties[party]) || 0
-    if (amount === null && this.bots.length + 1 <= this.maximum && inParty + 1 <= this.maximum) {
+    if (amount === null && this.bots.length + 1 <= this.maximum && inParty + 1 <= this.maximum * 2) {
       return createBotUnchecked(party)
-    } else if (amount >= 0 && this.bots.length + amount <= this.maximum && inParty + amount <= this.maximum) {
+    } else if (amount >= 0 && this.bots.length + amount <= this.maximum && inParty + amount <= this.maximum * 2) {
       let group = []
       for (let i = 0; i < amount; i++) {
         let bot = this.createBotUnchecked(party)
@@ -352,13 +355,58 @@ let commands = {
       ws.on('open', () => {
         bot.status = 1
         ws.send().vu(0).string(BUILD).string('').string(server.party).string('').done()
-        ws.send().vu(2).string('Feed Bot').done()
         int = setInterval(() => {
           ws.send().vu(2).string('Feed Bot').done()
           let flags = 0b100100000010
           ws.send().vu(1).vu(flags).vf(0).vf(0).done()
           ws.send().vu(3).vi(7).vi(7).done()
-        }, 30)
+        }, 25)
+      })
+      ws.on('close', () => {
+        clearInterval(int)
+        bot.status = 2
+      })
+      ws.on('error', () => {
+        bot.status = 3
+      })
+    })
+    if (!bots) {
+      msg.reply(`You cannot have more than ${ commander.maximum } bots!`)
+      return
+    } else if (bots.ipOutage) {
+      msg.reply('Note: ran out of IPs!')
+    }
+
+    for (let bot of bots) {
+      bot.renew(8 * 60e3)
+    }
+
+    monitor(msg, bots)
+  },
+  async stalive({ args: [link], commander, msg }) {
+    let rateLimit = commander.checkRateLimit()
+    if (rateLimit) {
+      msg.reply(`You are being rate limited, please wait for ${ Math.ceil(rateLimit / 1000) } seconds.`)
+      return
+    }
+
+    let server = await link.server()
+    let bots = commander.connectServer(server, 1, bot => {
+      bot.status = 0
+      let ws = bot.socket
+      let int
+      ws.on('open', () => {
+        bot.status = 1
+        ws.send().vu(0).string(BUILD).string('').string(server.party).string('').done()
+        let frameCount = 0
+        int = setInterval(() => {
+          if (frameCount % 4000 === 0) {
+            ws.send().vu(2).string('Stay Alive Bot').done()
+          }
+          let flags = 0b100001000000
+          ws.send().vu(1).vu(flags).vf(0).vf(0).done()
+          frameCount++
+        }, 25)
       })
       ws.on('close', () => {
         clearInterval(int)
@@ -397,7 +445,6 @@ let commands = {
         bot.status = 1
         ws.send().vu(0).string(BUILD).string('').string(server.party).string('').done()
         let frameCount = 0
-        ws.send().vu(2).string('Cancer Bot').done()
         int = setInterval(() => {
           ws.send().vu(2).string('Cancer Bot').done()
           let flags = 0b100100000001
@@ -423,7 +470,7 @@ let commands = {
           let now = Date.now() / 1000
           ws.send().vu(1).vu(flags).vf(Math.cos(now) * 1000000).vf(Math.sin(now) * 1000000).done()
           frameCount++
-        }, 30)
+        }, 25)
       })
       ws.on('close', () => {
         clearInterval(int)
@@ -508,6 +555,31 @@ let commands = {
       if (bot) {
         bot.remove()
         msg.reply('Removed bot.')
+      } else {
+        msg.reply('Bot not found!')
+      }
+    }
+  },
+  async renew({ args: [id, time], commander, msg }) {
+    id = id.id()
+    let minutes = time.valueOf()
+    let ms = minutes * 60e3
+    let maximum = Math.min(commander.maximum, 24 * 24 * 60)
+    if (minutes <= 0 || minutes > maximum) {
+      msg.reply(`Bot renewal can only be between 0 to ${ maximum } minutes.`)
+    } else if (id === 'ALL') {
+      if (commander.bots.length) {
+        for (let bot of commander.bots.slice())
+          bot.renew(ms)
+        msg.reply('Renewed all bots.')
+      } else {
+        msg.reply('No bots found!')
+      }
+    } else {
+      let bot = commander.bots.find(r => r.id === id)
+      if (bot) {
+        bot.renew(ms)
+        msg.reply('Renewed bot.')
       } else {
         msg.reply('Bot not found!')
       }
@@ -607,12 +679,15 @@ let commands = {
       '- create <region-mode code>              Connect and get a party link if one exists given its region-mode code',
       '- regions <region>                                  Get a list of region-mode codes for a game mode (game mode can be ffa, survival, teams, 4teams, dom, tag, maze, or sandbox)',
       '- connect <party link> [amount]        Connect to a diep server, used to expand arena',
+      '- stalive <party link>                              Connect to a diep server and stay alive, respawning if necessary, used to prevent sandbox servers from dying',
       '- pump <party link> [amount]            Connect to a diep server and immediately leave',
       '- list                                                           List your bots with their ID and status',
-      '- remove [id]                                           Remove a bot given its ID',
-      '- remove all                                              Remove all of your bots',
-      '- party <party link>                                Find all party links given a single link of a team server',
-      '- tos                                                           Display the bot\'s term of service.',
+      '- renew <id> <minutes>                       Renew a bot given its ID to a time in minutes',
+      '- renew all <minutes>                           Renew all of your bots to a time in minutes',
+      '- remove <id>                                         Remove a bot given its ID',
+      '- remove all                                             Remove all of your bots',
+      '- party <party link>                               Find all party links given a single link of a team server',
+      '- tos                                                          Display the bot\'s term of service.',
       '',
       'Note that you are only given a limited number of bots, so use the remove command when you don\'t need them.',
       'By default you have 8 bots, but you can get more by joining the Discord server.',
