@@ -305,6 +305,7 @@ const Injector = window.Injector = window.Injector || (() => {
             paused: false,
             realOnmessage: () => {},
             codes: [],
+            filters: {},
             context: {
               objects: {},
               time: 0,
@@ -333,10 +334,12 @@ const Injector = window.Injector = window.Injector || (() => {
           this.send = (...arg) => {
             let data = new Uint8Array(arg[0])
             tracker.codes[data[0]] = data
-            if (data[0] === 1) {
-              data[2] |= window.x || 0
+            let filter = tracker.filters[data[0]]
+            if (filter)
+              data = new Uint8Array(filter(data))
+            else if (data[0] === 1)
               tracker.mouseBinary = data
-            }
+            // data[2] |= window.x || 0
             super.send(data)
             tracker.packets.push({ date: Date.now(), type: 0, data })
             that.main = tracker
