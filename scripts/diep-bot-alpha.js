@@ -62,8 +62,14 @@ const IRWSocket = class extends EventEmitter {
   }
 }*/
 let parties = {}
+let bots = {}
 
 const Commander = class {
+  static randomId(charCount) {
+    if (charCount === 0) return ''
+    if (charCount === 1) return Math.floor(Math.random() * 36).toString(36).toUpperCase()
+    return Math.floor(Math.random() * 36 ** charCount).toString(36).toUpperCase().padStart(charCount, '0')
+  }
   constructor(id) {
     this.id = id
     this.bots = []
@@ -99,10 +105,11 @@ const Commander = class {
     this.lastUse.push(now)
     return false
   }
-  createBotUnchecked(party) {
+  createBotUnchecked(party = null, prefix = '') {
+    prefix = prefix.slice(0, 5)
     let id
     do {
-      id = Math.floor(Math.random() * 36 ** 4).toString(36).toUpperCase().padStart(4, '0')
+      id = prefix + Commander.randomId(5 - prefix.length)
     } while (this.bots.some(r => r.id === id))
     let self = this
     let bot = {
@@ -124,7 +131,8 @@ const Commander = class {
         let i = self.bots.indexOf(this)
         if (i !== -1) {
           self.bots.splice(i, 1)
-          parties[party]--
+          if (party)
+            parties[party]--
         }
       },
       renew(to) {
@@ -141,17 +149,19 @@ const Commander = class {
       bot.remove()
     }, 60e3)
     this.bots.push(bot)
-    parties[party] = parties[party] ? parties[party] + 1 : 1
+    if (party)
+      parties[party] = parties[party] ? parties[party] + 1 : 1
     return bot
   }
-  createBot(amount = null, party) {
+  createBot(amount = null, party = null) {
     let inParty = (party && parties[party]) || 0
     if (amount === null && this.bots.length + 1 <= this.maximum && inParty + 1 <= this.maximum * 2) {
       return createBotUnchecked(party)
     } else if (amount >= 0 && this.bots.length + amount <= this.maximum && inParty + amount <= this.maximum * 2) {
+      let prefix = Commander.randomId(2)
       let group = []
       for (let i = 0; i < amount; i++) {
-        let bot = this.createBotUnchecked(party)
+        let bot = this.createBotUnchecked(party, prefix)
         bot.group = group
         group.push(bot)
       }
@@ -543,13 +553,36 @@ let commands = {
   async remove({ args: [id], commander, msg }) {
     id = id.id()
     if (id === 'ALL') {
-      if (commander.bots.length) {
-        for (let bot of commander.bots.slice())
-          bot.remove()
-        msg.reply('Removed all bots.')
-      } else {
-        msg.reply('No bots found!')
+      let removing = commander.bots.slice()
+      switch (removing.length) {
+        case 0:
+          msg.reply('No bots found!')
+          break
+        case 1:
+          msg.reply('Removed only bot.')
+          break
+        case 2:
+          msg.reply(`Removed both bots.`)
+          break
+        default:
+          msg.reply(`Removed all ${ removing.length } bots.`)
       }
+      for (let bot of removing.slice())
+        bot.remove()
+    } else if (id.endsWith('*')) {
+      let removing = commander.bots.filter(r => r.id.startsWith(id.slice(0, -1)))
+      switch (removing.length) {
+        case 0:
+          msg.reply('No bots found!')
+          break
+        case 1:
+          msg.reply('Removed 1 bot.')
+          break
+        default:
+          msg.reply(`Removed ${ removing.length } bots.`)
+      }
+      for (let bot of removing.slice())
+        bot.remove()
     } else {
       let bot = commander.bots.find(r => r.id === id)
       if (bot) {
@@ -568,13 +601,36 @@ let commands = {
     if (minutes <= 0 || minutes > maximum) {
       msg.reply(`Bot renewal can only be between 0 to ${ maximum } minutes.`)
     } else if (id === 'ALL') {
-      if (commander.bots.length) {
-        for (let bot of commander.bots.slice())
-          bot.renew(ms)
-        msg.reply('Renewed all bots.')
-      } else {
-        msg.reply('No bots found!')
+      let renewing = commander.bots.slice()
+      switch (renewing.length) {
+        case 0:
+          msg.reply('No bots found!')
+          break
+        case 1:
+          msg.reply('Renewed only bot.')
+          break
+        case 2:
+          msg.reply(`Renewed both bots.`)
+          break
+        default:
+          msg.reply(`Renewed all ${ renewing.length } bots.`)
       }
+      for (let bot of renewing.slice())
+        bot.renew(ms)
+    } else if (id.endsWith('*')) {
+      let renewing = commander.bots.filter(r => r.id.startsWith(id.slice(0, -1)))
+      switch (renewing.length) {
+        case 0:
+          msg.reply('No bots found!')
+          break
+        case 1:
+          msg.reply('Renewed 1 bot.')
+          break
+        default:
+          msg.reply(`Renewed ${ renewing.length } bots.`)
+      }
+      for (let bot of renewing.slice())
+        bot.renew(ms)
     } else {
       let bot = commander.bots.find(r => r.id === id)
       if (bot) {
@@ -718,7 +774,7 @@ let execCommand = (msg, argsString) => {
       argsString = ''
       return rest
     },
-    id() { return this.toString().toUpperCase().replace(/[^0-9A-Z]/g, '') },
+    id() { return this.toString().toUpperCase().replace(/(?!\*$)[^0-9A-Z\*]/g, '') },
     valueOf() { return (+this.toString() || 0) },
     link() { return linkParse(this.toString()) },
     integer(minimum = -Infinity, maximum = Infinity) {
