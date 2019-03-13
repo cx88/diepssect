@@ -23,12 +23,25 @@ const Shape = class {
 }
 
 const Canvas = class {
+  static mc() {
+    return {
+      left: false,
+      right: false,
+      x: 0,
+      y: 0,
+      dx: 0,
+      dy: 0,
+      scroll: 0,
+      owned: false,
+    }
+  }
   constructor(canvas) {
     this.canvas = canvas
     this.ctx = canvas.getContext('2d')
     this.oldFontName = 'sans-serif'
 
     this.mc = null
+    this.mcDefault = {}
     this.mouseAt = { x: 0, y: 0, left: false, right: false }
     this.translates = [{ x: 0, y: 0 }]
 
@@ -118,8 +131,13 @@ const Canvas = class {
     mc.right = this.mouseAt.right
     this.mc = mc
   }
+  mouseClear(x, y, w, h, check = null) {
+    this.mouse(this.mcDefault, x, y, w, h, check)
+  }
   reset(width, height) {
-    if (this.mc && !this.mc.left) {
+    if (this.mc === true) {
+      this.mc = null
+    } else if (this.mc && !this.mc.left) {
       this.mc.owned = false
       this.mc.hover = false
       this.mc = null

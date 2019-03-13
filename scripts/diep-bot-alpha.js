@@ -559,7 +559,7 @@ let commands = {
           msg.reply('No bots found!')
           break
         case 1:
-          msg.reply('Removed only bot.')
+          msg.reply('Removed the only bot.')
           break
         case 2:
           msg.reply(`Removed both bots.`)
