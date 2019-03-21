@@ -770,7 +770,7 @@ let execCommand = (msg, argsString) => {
       else
         msg.reply('Error while executing command!')
       if (LOG_CHANNEL)
-        msg.channels.get(LOG_CHANNEL).send(`Errored on command \`\`${ argsString }\`\` with error\`\`\`js${ e.stack }\`\`\``)
+        bot.channels.get(LOG_CHANNEL).send(`Errored on command \`\`${ argsString }\`\` with error\`\`\`js${ e.stack }\`\`\``)
       console.error(e)
     })
   }
@@ -785,7 +785,7 @@ bot.on('ready', () => {
       game: { name: `diep.io | ${ PREFIX }help | ${ bot.guilds.size } servers` }
     })
   if (LOG_CHANNEL)
-    msg.channels.get(LOG_CHANNEL).send('Started bot.')
+    bot.channels.get(LOG_CHANNEL).send('Started bot.')
 })
 bot.on('guildCreate', guild => {
   if (SET_PLAYING)
@@ -793,7 +793,7 @@ bot.on('guildCreate', guild => {
       game: { name: `diep.io | ${ PREFIX }help | ${ bot.guilds.size } servers` }
     })
   if (LOG_CHANNEL)
-    msg.channels.get(LOG_CHANNEL).send(`Joined server \`\`${ guild.name || 'unknown' }\`\``)
+    bot.channels.get(LOG_CHANNEL).send(`Joined server \`\`${ guild.name || 'unknown' }\`\``)
 })
 bot.on('guildDelete', guild => {
   if (SET_PLAYING)
@@ -801,7 +801,7 @@ bot.on('guildDelete', guild => {
       game: { name: `diep.io | ${ PREFIX }help | ${ bot.guilds.size } servers` }
     })
   if (LOG_CHANNEL)
-    msg.channels.get(LOG_CHANNEL).send(`Left server \`\`${ guild.name || 'unknown' }\`\``)
+    bot.channels.get(LOG_CHANNEL).send(`Left server \`\`${ guild.name || 'unknown' }\`\``)
 })
 bot.on('message', msg => {
   if (msg.channel.id === WEBHOOK_PROCESSOR && msg.embeds.length === 1)
