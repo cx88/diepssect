@@ -1,66 +1,13 @@
 const http = require('http')
 const util = require('util')
-const WebSocket = require('ws')
 const Discord = require('discord.js')
-const EventEmitter = require('events')
-const IpAlloc = require('./ip-alloc.js')
-const { Reader, Writer } = require('./coder')
 
-const { PREFIX, TOKEN, SET_PLAYING, IP_TEMPLATE, BUILD, WEBHOOK_PROCESSOR } = require('../config.json')
+const BotError = require('./bot-error')
+const IpAlloc = require('./ip-alloc')
+const IRWSocket = require('./irws')
 
-const WriterSending = class extends Writer {
-  constructor(socket) {
-    super()
-    this.socket = socket
-  }
-  done() {
-    if (this.socket.readyState === 1)
-      this.socket.send(this.out())
-  }
-}
+const { PREFIX, TOKEN, SET_PLAYING, IP_TEMPLATE, BUILD, WEBHOOK_PROCESSOR, LOG_CHANNEL } = require('../config.json')
 
-const IRWSocket = class extends EventEmitter {
-  constructor(address, { ip, release }) {
-    super()
-    let socket = new WebSocket(address, {
-      origin: address.startsWith('wss') ? 'https://diep.io' : 'http://diep.io',
-      localAddress: ip,
-    })
-    socket.on('open', () => {
-      super.emit('open')
-    })
-    socket.on('message', data => {
-      let u8 = new Uint8Array(data)
-      super.emit('message', new Reader(u8))
-    })
-    socket.on('close', e => {
-      release()
-      super.emit('close')
-    })
-    socket.on('error', err => {
-      release()
-      super.emit('error', err)
-    })
-    this.socket = socket
-  }
-  send() {
-    return new WriterSending(this.socket)
-  }
-  close() {
-    try {
-      this.socket.close()
-    } catch(e) {
-      this.socket.terminate()
-    }
-  }
-}
-
-/*const CommanderError = class extends Error {
-  constructor(...args) {
-    super(...args)
-    Error.captureStackTrace(this, GoodError)
-  }
-}*/
 let parties = {}
 let bots = {}
 
@@ -818,7 +765,12 @@ let execCommand = (msg, argsString) => {
       commander = commanders[msg.author.id] = new Commander(msg.author.id)
 
     command({ msg, args, commander }).catch(e => {
-      msg.reply('Error while executing command!')
+      if (e instanceof BotError)
+        msg.reply(e.toString())
+      else
+        msg.reply('Error while executing command!')
+      if (LOG_CHANNEL)
+        msg.channels.get(LOG_CHANNEL).send(`Errored on command \`\`${ argsString }\`\` with error\`\`\`js${ e.stack }\`\`\``)
       console.error(e)
     })
   }
@@ -832,18 +784,24 @@ bot.on('ready', () => {
     bot.user.setPresence({
       game: { name: `diep.io | ${ PREFIX }help | ${ bot.guilds.size } servers` }
     })
+  if (LOG_CHANNEL)
+    msg.channels.get(LOG_CHANNEL).send('Started bot.')
 })
-bot.on('guildCreate', () => {
+bot.on('guildCreate', guild => {
   if (SET_PLAYING)
     bot.user.setPresence({
       game: { name: `diep.io | ${ PREFIX }help | ${ bot.guilds.size } servers` }
     })
+  if (LOG_CHANNEL)
+    msg.channels.get(LOG_CHANNEL).send(`Joined server \`\`${ guild.name || 'unknown' }\`\``)
 })
-bot.on('guildDelete', () => {
+bot.on('guildDelete', guild => {
   if (SET_PLAYING)
     bot.user.setPresence({
       game: { name: `diep.io | ${ PREFIX }help | ${ bot.guilds.size } servers` }
     })
+  if (LOG_CHANNEL)
+    msg.channels.get(LOG_CHANNEL).send(`Left server \`\`${ guild.name || 'unknown' }\`\``)
 })
 bot.on('message', msg => {
   if (msg.channel.id === WEBHOOK_PROCESSOR && msg.embeds.length === 1)
