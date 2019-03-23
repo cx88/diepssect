@@ -770,7 +770,10 @@ let execCommand = (msg, argsString) => {
       else
         msg.reply('Error while executing command!')
       if (LOG_CHANNEL)
-        bot.channels.get(LOG_CHANNEL).send(`Errored on command \`\`${ argsString }\`\` with error\`\`\`js${ e.stack }\`\`\``)
+        if (argsString)
+          bot.channels.get(LOG_CHANNEL).send(`Errored on command \`\`${ argsString }\`\` with error\`\`\`js${ e.stack }\`\`\``)
+        else
+          bot.channels.get(LOG_CHANNEL).send(`Errored on command blank with error\`\`\`js${ e.stack }\`\`\``)
       console.error(e)
     })
   }

@@ -1,8 +1,8 @@
 {
-  "name": "scripts",
+  "name": "diep-bot",
   "version": "0.1.0",
-  "description": "All sort of scripts.",
-  "main": "diep-bot-alpha.js",
+  "description": "The Discord diep bot.",
+  "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
