@@ -9,7 +9,7 @@ const IRWSocket = require('./irws')
 const { PREFIX, TOKEN, SET_PLAYING, IP_TEMPLATE, BUILD, WEBHOOK_PROCESSOR, LOG_CHANNEL } = require('../config.json')
 
 let parties = {}
-let bots = {}
+let allBots = {}
 
 const Commander = class {
   static randomId(charCount) {
@@ -21,6 +21,7 @@ const Commander = class {
     this.id = id
     this.bots = []
     this.lastUse = [0, 0, 0]
+    this.prefix = Commander.randomId(6)
   }
   get perm() {
     let perm = this.id === '239162248990294017' ? 5 : 0
@@ -53,11 +54,11 @@ const Commander = class {
     return false
   }
   createBotUnchecked(party = null, prefix = '') {
-    prefix = prefix.slice(0, 5)
+    prefix = prefix.slice(0, 12)
     let id
     do {
-      id = prefix + Commander.randomId(5 - prefix.length)
-    } while (this.bots.some(r => r.id === id))
+      id = prefix + Commander.randomId(12 - prefix.length)
+    } while (allBots[id])
     let self = this
     let bot = {
       id,
@@ -81,6 +82,7 @@ const Commander = class {
           if (party)
             parties[party]--
         }
+        allBots[id] = null
       },
       renew(to) {
         if (to < 0) to = 0
@@ -96,6 +98,7 @@ const Commander = class {
       bot.remove()
     }, 60e3)
     this.bots.push(bot)
+    allBots[id] = bot
     if (party)
       parties[party] = parties[party] ? parties[party] + 1 : 1
     return bot
@@ -103,9 +106,9 @@ const Commander = class {
   createBot(amount = null, party = null) {
     let inParty = (party && parties[party]) || 0
     if (amount === null && this.bots.length + 1 <= this.maximum && inParty + 1 <= this.maximum * 2) {
-      return createBotUnchecked(party)
+      return createBotUnchecked(party, this.prefix)
     } else if (amount >= 0 && this.bots.length + amount <= this.maximum && inParty + amount <= this.maximum * 2) {
-      let prefix = Commander.randomId(2)
+      let prefix = this.prefix + Commander.randomId(3)
       let group = []
       for (let i = 0; i < amount; i++) {
         let bot = this.createBotUnchecked(party, prefix)
@@ -154,7 +157,7 @@ const Commander = class {
     return bots
   }
   getBot(id) {
-    return this.bots.find(r => r.id === id)
+    return allBots[id]
   }
   removeBot(id) {
     let bot = this.getBot(id)
@@ -492,13 +495,13 @@ let commands = {
             (hours ? hours + 'h ' : '') +
             (minutes ? minutes + 'm ' : '') +
             (seconds ? seconds + 's ' : '')
-          return `-   \`${ bot.id }\`    Status:  ${ status }    Expiring In:  ${ expire }`
+          return `-   \`${ bot.id.replace(commander.prefix, '~') }\`    Status:  ${ status }    Expiring In:  ${ expire }`
         }).join('\n'))
     else
       msg.reply(`You have no bots. (0/${ commander.maximum })`)
   },
   async remove({ args: [id], commander, msg }) {
-    id = id.id()
+    id = id.id(commander.prefix)
     if (id === 'ALL') {
       let removing = commander.bots.slice()
       switch (removing.length) {
@@ -541,7 +544,7 @@ let commands = {
     }
   },
   async renew({ args: [id, time], commander, msg }) {
-    id = id.id()
+    id = id.id(commander.prefix)
     let minutes = time.valueOf()
     let ms = minutes * 60e3
     let maximum = Math.min(commander.maximum, 24 * 24 * 60)
@@ -721,7 +724,7 @@ let execCommand = (msg, argsString) => {
       argsString = ''
       return rest
     },
-    id() { return this.toString().toUpperCase().replace(/(?!\*$)[^0-9A-Z\*]/g, '') },
+    id(prefix) { return this.toString().toUpperCase().replace(/(?!\*$)(?!^~)[^0-9A-Z]/g, '').replace('~', prefix || '') },
     valueOf() { return (+this.toString() || 0) },
     link() { return linkParse(this.toString()) },
     integer(minimum = -Infinity, maximum = Infinity) {
