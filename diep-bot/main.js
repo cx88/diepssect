@@ -410,11 +410,11 @@ let commands = {
           let flags = 0b100100000001
           let upgrade = null
           if (frameCount === 48) {
-            upgrade = 18
+            upgrade = 94 // 18
           } else if (frameCount === 49) {
-            upgrade = 32
+            upgrade = 108 // 32
           } else if (frameCount >= 50 && frameCount % 20 === 0) {
-            upgrade = 94
+            upgrade = 18 // 94
             flags |= 0b010000000000
             ws.send().vu(3).vi(0).vi(5).done()
             ws.send().vu(3).vi(1).vi(7).done()
@@ -422,7 +422,7 @@ let commands = {
             ws.send().vu(3).vi(4).vi(7).done()
             ws.send().vu(3).vi(5).vi(7).done()
           } else {
-            upgrade = 94
+            upgrade = 18 // 94
             flags |= 0b010000000000
           }
           if (upgrade !== null)
