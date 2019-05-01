@@ -8,6 +8,17 @@ const IRWSocket = require('./irws')
 
 const { PREFIX, TOKEN, SET_PLAYING, IP_TEMPLATE, BUILD, WEBHOOK_PROCESSOR, LOG_CHANNEL } = require('../config.json')
 
+const STAT_CODE = {
+  healthRegen: 6,
+  maxHealth: 7,
+  bodyDamage: 4,
+  bulletSpeed: 5,
+  bulletPenetration: 2,
+  bulletDamage: 3,
+  reload: 0,
+  movement: 1,
+}
+
 let parties = {}
 let allBots = {}
 
@@ -319,7 +330,7 @@ let commands = {
           ws.send().vu(2).string('Feed Bot').done()
           let flags = 0b100100000010
           ws.send().vu(1).vu(flags).vf(0).vf(0).done()
-          ws.send().vu(3).vi(7).vi(7).done()
+          ws.send().vu(3).vi(STAT_CODE.movement).vi(7).done()
         }, 25)
       })
       ws.on('close', () => {
@@ -416,11 +427,11 @@ let commands = {
           } else if (frameCount >= 50 && frameCount % 20 === 0) {
             upgrade = 18 // 94
             flags |= 0b010000000000
-            ws.send().vu(3).vi(0).vi(5).done()
-            ws.send().vu(3).vi(1).vi(7).done()
-            ws.send().vu(3).vi(2).vi(7).done()
-            ws.send().vu(3).vi(4).vi(7).done()
-            ws.send().vu(3).vi(5).vi(7).done()
+            ws.send().vu(3).vi(STAT_CODE.healthRegen).vi(5).done()
+            ws.send().vu(3).vi(STAT_CODE.maxHealth).vi(7).done()
+            ws.send().vu(3).vi(STAT_CODE.bodyDamage).vi(7).done()
+            ws.send().vu(3).vi(STAT_CODE.bulletPenetration).vi(7).done()
+            ws.send().vu(3).vi(STAT_CODE.bulletDamage).vi(7).done()
           } else {
             upgrade = 18 // 94
             flags |= 0b010000000000
