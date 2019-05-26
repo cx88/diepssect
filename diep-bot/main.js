@@ -9,14 +9,14 @@ const IRWSocket = require('./irws')
 const { PREFIX, TOKEN, SET_PLAYING, IP_TEMPLATE, BUILD, WEBHOOK_PROCESSOR, LOG_CHANNEL } = require('../config.json')
 
 const STAT_CODE = {
-  healthRegen: 6,
-  maxHealth: 7,
-  bodyDamage: 4,
-  bulletSpeed: 5,
-  bulletPenetration: 2,
-  bulletDamage: 3,
-  reload: 0,
-  movement: 1,
+  healthRegen: 1,
+  maxHealth: 0,
+  bodyDamage: 3,
+  bulletSpeed: 2,
+  bulletPenetration: 5,
+  bulletDamage: 4,
+  reload: 7,
+  movement: 6,
 }
 
 let parties = {}
