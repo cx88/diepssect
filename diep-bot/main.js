@@ -9,14 +9,20 @@ const IRWSocket = require('./irws')
 const { PREFIX, TOKEN, SET_PLAYING, IP_TEMPLATE, BUILD, WEBHOOK_PROCESSOR, LOG_CHANNEL } = require('../config.json')
 
 const STAT_CODE = {
-  healthRegen: 1,
-  maxHealth: 0,
-  bodyDamage: 3,
-  bulletSpeed: 2,
-  bulletPenetration: 5,
-  bulletDamage: 4,
-  reload: 7,
-  movement: 6,
+  healthRegen: 4,
+  maxHealth: 5,
+  bodyDamage: 6,
+  bulletSpeed: 7,
+  bulletPenetration: 0,
+  bulletDamage: 1,
+  reload: 2,
+  movement: 3,
+}
+
+const TANK_CODE = {
+  sniper: 26,
+  trapper: 40,
+  megaTrapper: 82,
 }
 
 let parties = {}
@@ -421,11 +427,11 @@ let commands = {
           let flags = 0b100100000001
           let upgrade = null
           if (frameCount === 48) {
-            upgrade = 94 // 18
+            upgrade = TANK_CODE.sniper
           } else if (frameCount === 49) {
-            upgrade = 108 // 32
+            upgrade = TANK_CODE.trapper
           } else if (frameCount >= 50 && frameCount % 20 === 0) {
-            upgrade = 18 // 94
+            upgrade = TANK_CODE.megaTrapper
             flags |= 0b010000000000
             ws.send().vu(3).vi(STAT_CODE.healthRegen).vi(5).done()
             ws.send().vu(3).vi(STAT_CODE.maxHealth).vi(7).done()
@@ -433,7 +439,7 @@ let commands = {
             ws.send().vu(3).vi(STAT_CODE.bulletPenetration).vi(7).done()
             ws.send().vu(3).vi(STAT_CODE.bulletDamage).vi(7).done()
           } else {
-            upgrade = 18 // 94
+            upgrade = TANK_CODE.megaTrapper
             flags |= 0b010000000000
           }
           if (upgrade !== null)
@@ -708,6 +714,7 @@ let commands = {
       '',
       'Note that you are only given a limited number of bots, so use the remove command when you don\'t need them.',
       'By default you have 8 bots, but you can get more by joining the Discord server.',
+      'If you own a big server and want to use the bots for events, you can join the Discord server and get more bots.',
       '',
       'Invite to the Discord server: <https://discord.gg/8gvUd3v>',
       'Invite to the bot: <https://discordapp.com/oauth2/authorize?client_id=398241406910726144&scope=bot&permissions=8>',
