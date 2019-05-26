@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Injector
-// @description  A simple script that exports important variables in wasm.js and allows replacing any values such as CanvasRenderingContext2D.prototype.fillText without trigger the extension detector.
+// @description  A simple script that exports important variables in wasm.js and allows replacing any values such as CanvasRenderingContext2D.prototype.fillText without triggering the extension detector.
 // @version      0.2
 // @author       CX
 // @namespace    *://diep.io/
