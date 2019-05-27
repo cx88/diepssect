@@ -36,7 +36,8 @@ const Injector = window.Injector = window.Injector || (() => {
 
     fetch(document.querySelector('script[src*="build_"]').src)
       .then(r => r.text())
-      .then(r => r.replace(/}\)\)\(window\)\s*$/, to => appender + to))
+      .then(r => r.replace(/use asm/, 'not asm'))
+      .then(r => r.replace(/}\)\)?\(window\);?\s*$/, to => appender + to))
       .then(eval)
 
     throw new Error('Disabling default source')
@@ -57,5 +58,3 @@ const Injector = window.Injector = window.Injector || (() => {
     replace,
   }
 })()
-
-module.exports = Injector

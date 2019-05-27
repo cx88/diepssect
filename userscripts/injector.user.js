@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Injector
-// @description  A simple script that exports important variables in wasm.js and allows replacing any values such as CanvasRenderingContext2D.prototype.fillText without triggering the extension detector.
+// @description  A simple script that exports important variables in wasm.js and allows replacing any values such as CanvasRenderingContext2D.prototype.fillText without trigger the extension detector.
 // @version      0.2
 // @author       CX
 // @namespace    *://diep.io/
@@ -47,7 +47,8 @@ const Injector = window.Injector = window.Injector || (() => {
 
     fetch(document.querySelector('script[src*="build_"]').src)
       .then(r => r.text())
-      .then(r => r.replace(/}\)\)\(window\)\s*$/, to => appender + to))
+      .then(r => r.replace(/use asm/, 'not asm'))
+      .then(r => r.replace(/}\)\)?\(window\);?\s*$/, to => appender + to))
       .then(eval)
 
     throw new Error('Disabling default source')
