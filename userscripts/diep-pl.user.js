@@ -761,7 +761,7 @@ const Injector = window.Injector = window.Injector || (() => {
 
           let exports = Injector.maybeExports()
           if (exports)
-            exports.Module.HEAPU8[0xa9c9] ='6'.charCodeAt(0)
+            exports.Module.HEAPU8[0xa91e] = '6'.charCodeAt(0)
           if (debugMode)
             input.keyDown(76)
           else
