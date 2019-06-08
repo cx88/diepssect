@@ -81,7 +81,7 @@ Note that the movement arguments are only added when using gamepads.
 |------|-------------------|------------|
 | `00` | update            | Structured |
 | `01` | outdated client   | Done       |
-| `02` | compressed update | Unknown    |
+| `02` | compressed update | Structured |
 | `03` | message           | Done       |
 | `04` | server status     | Done       |
 | `05` | echo              | Done       |

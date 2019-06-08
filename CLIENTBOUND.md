@@ -49,3 +49,7 @@ Here is a example of a packet where two entities are deleted while one is being 
       73    | vi ???    | field 3: angle
       01    | vx 0      | field ended
 ```
+
+### Compression
+
+Diep.io uses a modified version of [LZ4](https://fastcompression.blogspot.com/2011/05/lz4-explained.html). There are no magic numbers or checksum at the start. Instead, following the packet header is a 32-bit integer denoting the byte length of the decompressed `00` packet, and the compressed `00` packet itself.
