@@ -760,8 +760,8 @@ const Injector = window.Injector = window.Injector || (() => {
           input.set_convar('ren_minimap_viewport', debugMode)
 
           let exports = Injector.maybeExports()
-          if (exports)
-            exports.Module.HEAPU8[0xa91e] = '6'.charCodeAt(0)
+          if (exports && exports.Module.HEAPU8[0xa94b] === '1'.charCodeAt(0))
+            exports.Module.HEAPU8[0xa94b] = '6'.charCodeAt(0)
           if (debugMode)
             input.keyDown(76)
           else
