@@ -9,20 +9,20 @@ const IRWSocket = require('./irws')
 const { PREFIX, TOKEN, SET_PLAYING, IP_TEMPLATE, BUILD, WEBHOOK_PROCESSOR, LOG_CHANNEL } = require('../config.json')
 
 const STAT_CODE = {
-  healthRegen: 4,
-  maxHealth: 5,
-  bodyDamage: 6,
-  bulletSpeed: 7,
-  bulletPenetration: 0,
-  bulletDamage: 1,
-  reload: 2,
-  movement: 3,
+  healthRegen: 7 ^ 3,
+  maxHealth: 6 ^ 3,
+  bodyDamage: 5 ^ 3,
+  bulletSpeed: 4 ^ 3,
+  bulletPenetration: 3 ^ 3,
+  bulletDamage: 2 ^ 3,
+  reload: 1 ^ 3,
+  movement: 0 ^ 3,
 }
 
 const TANK_CODE = {
-  sniper: 26,
-  trapper: 40,
-  megaTrapper: 82,
+  sniper: 17, // 13,
+  trapper: 8, // 20,
+  megaTrapper: 53, // 41,
 }
 
 let parties = {}
@@ -443,7 +443,7 @@ let commands = {
             flags |= 0b010000000000
           }
           if (upgrade !== null)
-            ws.send().vu(4).i8(upgrade).done()
+            ws.send().vu(4).vi(upgrade).done()
           let now = Date.now() / 1000
           ws.send().vu(1).vu(flags).vf(Math.cos(now) * 1000000).vf(Math.sin(now) * 1000000).done()
           frameCount++
@@ -731,6 +731,7 @@ let execWebhook = (msg, embed) => {
 
 }
 let execCommand = (msg, argsString) => {
+  let argsStringCopy = argsString
   let args = {
     toString() {
       let i = argsString.search(/\s+/)
@@ -793,10 +794,10 @@ let execCommand = (msg, argsString) => {
       else
         msg.reply('Error while executing command!')
       if (LOG_CHANNEL)
-        if (argsString)
-          bot.channels.get(LOG_CHANNEL).send(`Errored on command \`\`${ argsString }\`\` with error\`\`\`js${ e.stack }\`\`\``)
+        if (argsStringCopy)
+          bot.channels.get(LOG_CHANNEL).send(`Errored on command \`\`${ argsStringCopy }\`\` with error\`\`\`js\n${ e.stack }\`\`\``)
         else
-          bot.channels.get(LOG_CHANNEL).send(`Errored on command blank with error\`\`\`js${ e.stack }\`\`\``)
+          bot.channels.get(LOG_CHANNEL).send(`Errored on command blank with error\`\`\`js\n${ e.stack }\`\`\``)
       console.error(e)
     })
   }
