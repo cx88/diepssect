@@ -6,24 +6,107 @@ const BotError = require('./bot-error')
 const IpAlloc = require('./ip-alloc')
 const IRWSocket = require('./irws')
 
-const { PREFIX, TOKEN, SET_PLAYING, IP_TEMPLATE, BUILD, WEBHOOK_PROCESSOR, LOG_CHANNEL } = require('../config.json')
+const {
+  PREFIX,
+  TOKEN,
+  SET_PLAYING,
+  IP_TEMPLATE,
+  BUILD,
+  WEBHOOK_PROCESSOR,
+  LOG_CHANNEL,
+  SHUFFLER,
+} = require('../config.json')
 
-const STAT_CODE = {
-  healthRegen: 7 ^ 3,
-  maxHealth: 6 ^ 3,
-  bodyDamage: 5 ^ 3,
-  bulletSpeed: 4 ^ 3,
-  bulletPenetration: 3 ^ 3,
-  bulletDamage: 2 ^ 3,
-  reload: 1 ^ 3,
-  movement: 0 ^ 3,
+const Table = class {
+  constructor(table = [], processBy = 0) {
+    let processor = processBy === 'function' ? processBy : i => i ^ processBy
+    this.table = table
+    this.length = table.length
+
+    this.lookup = {}
+    this.reverse = {}
+    for (let i = 0; i < table.length; i++) {
+      this.lookup[processor(i)] = table[i]
+      this.reverse[table[i]] = processor(i)
+    }
+  }
+  get(id) {
+    return this.lookup[id]
+  }
+  find(name) {
+    return this.reverse[name]
+  }
 }
 
-const TANK_CODE = {
-  sniper: 17, // 13,
-  trapper: 8, // 20,
-  megaTrapper: 53, // 41,
-}
+const StatTable = new Table([
+  'Movement Speed',
+  'Reload',
+  'Bullet Damage',
+  'Bullet Penetration',
+  'Bullet Speed',
+  'Body Damage',
+  'Max Health',
+  'Health Regen',
+], SHUFFLER.STAT)
+
+const TankTable = new Table([
+  'Tank',
+  'Twin',
+  'Triplet',
+  'Triple Shot',
+  'Quad Tank',
+  'Octo Tank',
+  'Sniper',
+  'Machine Gun',
+  'Flank Guard',
+  'Tri-Angle',
+  'Destroyer',
+  'Overseer',
+  'Overlord',
+  'Twin-Flank',
+  'Penta Shot',
+  'Assassin',
+  'Arena Closer',
+  'Necromancer',
+  'Triple Twin',
+  'Hunter',
+  'Gunner',
+  'Stalker',
+  'Ranger',
+  'Booster',
+  'Fighter',
+  'Hybrid',
+  'Manager',
+  'Mothership',
+  'Predator',
+  'Sprayer',
+  '',
+  'Trapper',
+  'Gunner Trapper',
+  'Overtrapper',
+  'Mega Trapper',
+  'Tri-Trapper',
+  'Smasher',
+  '', // Mega Smasher?
+  'Landmine',
+  'Auto Gunner',
+  'Auto 5',
+  'Auto 3',
+  'Spread Shot',
+  'Streamliner',
+  'Auto Trapper',
+  'Dominator', // Destroyer
+  'Dominator', // Gunner
+  'Dominator', // Trapper
+  'Battleship',
+  'Annihilator',
+  'Auto Smasher',
+  'Spike',
+  'Factory',
+  '', // Ball, Mounted Turret?
+  'Skimmer',
+  'Rocketeer',
+], SHUFFLER.TANK)
 
 let parties = {}
 let allBots = {}
@@ -336,7 +419,7 @@ let commands = {
           ws.send().vu(2).string('Feed Bot').done()
           let flags = 0b100100000010
           ws.send().vu(1).vu(flags).vf(0).vf(0).done()
-          ws.send().vu(3).vi(STAT_CODE.movement).vi(7).done()
+          ws.send().vu(3).vi(StatTable.find('Movement Speed')).vi(7).done()
         }, 25)
       })
       ws.on('close', () => {
@@ -427,19 +510,19 @@ let commands = {
           let flags = 0b100100000001
           let upgrade = null
           if (frameCount === 48) {
-            upgrade = TANK_CODE.sniper
+            upgrade = TankTable.find('Sniper')
           } else if (frameCount === 49) {
-            upgrade = TANK_CODE.trapper
+            upgrade = TankTable.find('Trapper')
           } else if (frameCount >= 50 && frameCount % 20 === 0) {
-            upgrade = TANK_CODE.megaTrapper
+            upgrade = TankTable.find('Mega Trapper')
             flags |= 0b010000000000
-            ws.send().vu(3).vi(STAT_CODE.healthRegen).vi(5).done()
-            ws.send().vu(3).vi(STAT_CODE.maxHealth).vi(7).done()
-            ws.send().vu(3).vi(STAT_CODE.bodyDamage).vi(7).done()
-            ws.send().vu(3).vi(STAT_CODE.bulletPenetration).vi(7).done()
-            ws.send().vu(3).vi(STAT_CODE.bulletDamage).vi(7).done()
+            ws.send().vu(3).vi(StatTable.find('Health Regen')).vi(5).done()
+            ws.send().vu(3).vi(StatTable.find('Max Health')).vi(7).done()
+            ws.send().vu(3).vi(StatTable.find('Body Damage')).vi(7).done()
+            ws.send().vu(3).vi(StatTable.find('Bullet Penetration')).vi(7).done()
+            ws.send().vu(3).vi(StatTable.find('Bullet Damage')).vi(7).done()
           } else {
-            upgrade = TANK_CODE.megaTrapper
+            upgrade = TankTable.find('Mega Trapper')
             flags |= 0b010000000000
           }
           if (upgrade !== null)
