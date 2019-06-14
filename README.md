@@ -28,6 +28,8 @@ There are other browser or node.js scripts, which can be found in the `scripts` 
 
 You can get `diep-pl.js` and use it in TemperMonkey. Press F12 to view all short cuts, but it include features like Alt+Z to dump log to console.
 
+The progress in packets are split into 4 categories. Unknown means that the structure of the packet is not yet completely understood. Structured means that the structure of the packet is known, but the specific details are not know yet. Mapped means that the packet is currently completely decoded, but it will change every update and must be mapped again. Done means that the packet has a know and static or extremely predictable mapping, enough to be automated.
+
 ### Encodings
 
 Although data is represented in many ways, there are only six primary encodings. You can find information on all of them in the `scripts/coder.js` file.
@@ -49,8 +51,8 @@ Many packets are already completely deciphered. Some packet types have a known s
 | `00` | init            | Done       |
 | `01` | input           | Done       |
 | `02` | spawn           | Done       |
-| `03` | upgrade build   | Done       |
-| `04` | upgrade tank    | Structured |
+| `03` | upgrade build   | Mapped     |
+| `04` | upgrade tank    | Mapped     |
 | `05` | echo            | Done       |
 | `06` |                 | Unknown    |
 | `07` | extension found | Structured |
