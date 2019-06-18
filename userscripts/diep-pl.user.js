@@ -326,7 +326,6 @@ const Injector = window.Injector = window.Injector || (() => {
               if (tracker.paused) {
                 tracker.quene.push(data)
               } else {
-                that.process(data, tracker.context)
                 realOnmessage({ data })
               }
             }
@@ -389,7 +388,7 @@ const Injector = window.Injector = window.Injector || (() => {
         i += 2
       } */
     }
-    process(packet, context) {
+    /*process(packet, context) {
       packet = new Uint8Array(packet)
       if (packet[0] !== 0 || packet.length === 1) return
       let getObject = (num, id) => {
@@ -485,7 +484,7 @@ const Injector = window.Injector = window.Injector || (() => {
         outputWarn(`! Underflow !`)
         output(Logger.createHexdump({ date: Date.now(), type: 1, data: packet }))
       }
-    }
+    }*/
     pause() {
       let main = this.main
       if ((main.paused = !main.paused)) {
@@ -530,18 +529,21 @@ const Injector = window.Injector = window.Injector || (() => {
     step(silent) {
       let main = this.main
       if (main.paused) {
-        let data
-        do {
-          data = main.quene.shift()
-          main.realOnmessage({ data })
-          this.process(data, main.context)
-        } while (data && new Uint8Array(data)[0] === 5)
-        if (!silent)
-          if (data) {
-            output(Logger.createHexdump({ date: Date.now(), type: 1, data: new Uint8Array(data) }))
-          } else {
+        while (true) {
+          let data = main.quene.shift()
+          if (!data) {
             outputWarn('No quened packets!')
+            break
           }
+          if (new Uint8Array(data)[0] === 5) {
+            main.realOnmessage({ data })
+          } else {
+            if (!silent)
+              output(Logger.createHexdump({ date: Date.now(), type: 1, data: new Uint8Array(data) }))
+            main.realOnmessage({ data })
+            break
+          }
+        }
       } else if (!silent) {
         outputWarn('Incoming packet stream not paused!')
       }
@@ -763,7 +765,7 @@ const Injector = window.Injector = window.Injector || (() => {
           if (debugMode) {
             input.keyDown(76)
             let exports = Injector.maybeExports()
-            if (exports) {
+            if (exports && exports.Module && exports.Module.HEAPU8) {
               let search = '\x00%.1f\x00'.split('').map(r => r.charCodeAt(0))
               let replace = '\x00%.6f\x00'.split('').map(r => r.charCodeAt(0))
               let { HEAPU8 } = exports.Module

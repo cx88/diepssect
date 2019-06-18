@@ -440,7 +440,6 @@ const Injector = window.Injector = window.Injector || (() => {
         let end = (i + length) * multiple
         bookmarks.push([ start, end, 'unknown' ])
       }
-      return
     } else if (typeof at === 'number' && !Number.isNaN(at)) {
       at *= multiple
       length *= multiple
