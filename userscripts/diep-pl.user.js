@@ -46,7 +46,8 @@ const Injector = window.Injector = window.Injector || (() => {
 
     fetch(document.querySelector('script[src*="build_"]').src)
       .then(r => r.text())
-      .then(r => r.replace(/}\)\)\(window\)\s*$/, to => appender + to))
+      .then(r => r.replace(/use asm/, 'not asm'))
+      .then(r => r.replace(/}\)\)?\(window\);?\s*$/, to => appender + to))
       .then(eval)
 
     throw new Error('Disabling default source')
@@ -759,13 +760,26 @@ const Injector = window.Injector = window.Injector || (() => {
           input.set_convar('ren_raw_health_values', debugMode)
           input.set_convar('ren_minimap_viewport', debugMode)
 
-          let exports = Injector.maybeExports()
-          if (exports && exports.Module.HEAPU8[0xa94b] === '1'.charCodeAt(0))
-            exports.Module.HEAPU8[0xa94b] = '6'.charCodeAt(0)
-          if (debugMode)
+          if (debugMode) {
             input.keyDown(76)
-          else
+            let exports = Injector.maybeExports()
+            if (exports) {
+              let search = '\x00%.1f\x00'.split('').map(r => r.charCodeAt(0))
+              let replace = '\x00%.6f\x00'.split('').map(r => r.charCodeAt(0))
+              let { HEAPU8 } = exports.Module
+              main: for (let i = 0; i < 0x40000; i++) {
+                for (let j = 0; j < search.length; j++) {
+                  if (HEAPU8[i + j] !== search[j]) continue main
+                }
+                for (let j = 0; j < replace.length; j++) {
+                  HEAPU8[i + j] = replace[j]
+                }
+                break
+              }
+            }
+          } else {
             input.keyUp(76)
+          }
           break
         case 'b':
           side.setSize(side.getSize() ? 0 : Math.max(250, innerWidth - Math.round(innerHeight / 9 * 16)))

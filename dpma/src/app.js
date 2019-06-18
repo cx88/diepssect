@@ -5,6 +5,56 @@ const $ = require('./pointer.js')
 
 const CHEAT_MODE = localStorage['actually know javascript'] === 'yes'
 
+const Memory = {
+  getArena() {
+    let [$arena] = $(0x10a58).$vector
+    let arena = $arena ? {
+      arenaRight: $arena[0xd8].f32,
+      leaderScore: $arena[0x180].f32,
+      leaderX: $arena[0x228].f32,
+      arenaTop: $arena[0x230].f32,
+      arenaBottom: $arena[0x290].f32,
+      leaderY: $arena[0x298].f32,
+      arenaLeft: $arena[0x2a0].f32,
+    } : {
+      arenaRight: 0,
+      leaderScore: 0,
+      leaderX: 0,
+      arenaTop: 0,
+      arenaBottom: 0,
+      leaderY: 0,
+      arenaLeft: 0,
+    }
+    return arena
+  },
+  getEntityLength() {
+    return $(0x10a7c).$vector.length
+  },
+  getSelfId() {
+    let [$ui] = $(0x10a70).$vector
+    let selfId = $ui ? $ui[0x1bc].u32 * 0x10000 + $ui[0x1ba].u16 : 0
+    return selfId
+  },
+  getEntities() {
+    let entities = $(0x10a7c).$vector.map(($entity, i) => {
+      let sizer = $(0x10a28).$vector[i]
+      let size = sizer ? sizer[0x38].f32 : null
+
+      let x = $entity[0x28].f32
+      let y = $entity[0x48].f32
+      let id = $entity.$[0x38].u32 * 0x10000 + $entity.$[0x36].u16
+
+      return { i, x, y, id, size }
+    })
+    return entities
+  },
+  scaleZoom(zoom) {
+    let [$ui] = $(0x10a70).$vector
+    if ($ui)
+      $ui[11 * 4].f32 *= zoom
+  },
+}
+
 const Component = class {
   constructor(parent) {
     this.parent = [parent, ...parent.parent]
@@ -286,25 +336,7 @@ const EntityBox = class extends Component {
     c.rectLineVertical(this.camera.x * this.camera.zoom + Math.floor(width / 2), 0, height, 2)
     c.translate(Math.floor(width / 2) + this.camera.x * this.camera.zoom, Math.floor(height / 2) + this.camera.y * this.camera.zoom)
 
-
-    let [$arena] = $(0x10a58).$vector
-    let arena = $arena ? {
-      arenaRight: $arena[0xd8].f32,
-      leaderScore: $arena[0x180].f32,
-      leaderX: $arena[0x228].f32,
-      arenaTop: $arena[0x230].f32,
-      arenaBottom: $arena[0x290].f32,
-      leaderY: $arena[0x298].f32,
-      arenaLeft: $arena[0x2a0].f32,
-    } : {
-      arenaRight: 0,
-      leaderScore: 0,
-      leaderX: 0,
-      arenaTop: 0,
-      arenaBottom: 0,
-      leaderY: 0,
-      arenaLeft: 0,
-    }
+    let arena = Memory.getArena()
 
     let left = arena.arenaLeft * this.camera.zoom
     let right = arena.arenaRight * this.camera.zoom
@@ -317,18 +349,8 @@ const EntityBox = class extends Component {
     c.rectLineVertical(right, top, bottom, 2)
 
     c.font(10)
-    let [$ui] = $(0x10a70).$vector
-    let selfId = $ui ? $ui[0x1bc].u32 * 0x10000 + $ui[0x1ba].u16 : 0
-    let entities = $(0x10a7c).$vector.map(($entity, i) => {
-      let sizer = $(0x10a28).$vector[i]
-      let size = sizer ? sizer[0x38].f32 : null
-
-      let x = $entity[0x28].f32
-      let y = $entity[0x48].f32
-      let id = $entity.$[0x38].u32 * 0x10000 + $entity.$[0x36].u16
-
-      return { x, y, id, size }
-    })
+    let selfId = Memory.getSelfId()
+    let entities = Memory.getEntities()
     let newestId = entities.map(r => r.id).reduce((a, b) => a > b ? a : b, -1)
     for (let { x, y, id, size } of entities) {
       c.fill(selfId === id ? '#36cf3e' : newestId === id ? '#3636cf' : '#36363e')
@@ -362,25 +384,15 @@ const EntityList = class extends Scrollable {
     super(parent)
   }
   queryHeight() {
-    return $(0x10a7c).$vector.length * 16
+    return Memory.getEntityLength() * 16
   }
   renderSection(c, width, height, minRender, maxRender) {
     c.fill('#f7f7f7')
     c.rect(0, minRender, width, maxRender - minRender)
 
     c.font(12)
-    let [$ui] = $(0x10a70).$vector
-    let selfId = $ui ? $ui[0x1bc].u32 * 0x10000 + $ui[0x1ba].u16 : 0
-    let entities = $(0x10a7c).$vector.map(($entity, i) => {
-      let sizer = $(0x10a28).$vector[i]
-      let size = sizer ? sizer[0x38].f32 : null
-
-      let x = $entity[0x28].f32
-      let y = $entity[0x48].f32
-      let id = $entity.$[0x38].u32 * 0x10000 + $entity.$[0x36].u16
-
-      return { i, x, y, id, size }
-    })
+    let selfId = Memory.getSelfId()
+    let entities = Memory.getEntities()
     let newestId = entities.map(r => r.id).reduce((a, b) => a > b ? a : b, -1)
     for (let { i, x, y, id, size } of entities) {
       c.fill(selfId === id ? '#36cf3e' : newestId === id ? '#3636cf' : '#36363e')
@@ -449,12 +461,9 @@ const DiepCanvas = class extends Component {
         }
 
         if (CHEAT_MODE && this.mc.scroll !== 0) {
-          let [$ui] = $(0x10a70).$vector
-          if ($ui) {
-            let zoom = Math.pow(0.85, this.mc.scroll)
-            $ui[11 * 4].f32 *= zoom
-            this.mc.scroll = 0
-          }
+          let zoom = Math.pow(0.85, this.mc.scroll)
+          this.mc.scroll = 0
+          Memory.scaleZoom(zoom)
         }
       } else {
         input.keyUp(1)
