@@ -220,7 +220,7 @@ const Commander = class {
       return null
     }
   }
-  connectServer({ ipv6, party = '' }, amount, processBot = bot => {
+  connectServer({ id, party = '', ws }, amount, processBot = bot => {
     bot.status = 0
     let ws = bot.socket
     ws.on('open', () => {
@@ -242,12 +242,12 @@ const Commander = class {
     if (!bots)
       return null
     for (let bot of bots) {
-      let alloc = ipAlloc.for(ipv6)
+      let alloc = ipAlloc.for(id)
       if (!alloc) {
         bots.ipOutage = true
         break
       }
-      bot.socket = new IRWSocket(`ws://[${ ipv6 }]:443`, alloc)
+      bot.socket = new IRWSocket(ws, alloc)
       processBot(bot)
     }
     if (bots.ipOutage)
@@ -268,20 +268,6 @@ const Commander = class {
 }
 
 let ipAlloc = new IpAlloc(IP_TEMPLATE)
-
-let findServer = id => new Promise((resolve, reject) => {
-  http.get(`http://api.n.m28.io/server/${ id }`, res => {
-    let data = ''
-    res.on('data', chunk => data += chunk)
-    res.on('end', () => {
-      try {
-        resolve(JSON.parse(data))
-      } catch(e) {
-        reject(e)
-      }
-    })
-  }).on('error', reject)
-})
 
 let findAnyServer = mode => new Promise((resolve, reject) => {
   http.get(`http://api.n.m28.io/endpoint/diepio-${ mode }/findEach/`, res => {
@@ -386,7 +372,7 @@ let commands = {
       return
     }
 
-    let bots = commander.connectServer(await link.server(), amount.integer(1))
+    let bots = commander.connectServer(link.server(), amount.integer(1))
     if (!bots) {
       msg.reply(`You cannot have more than ${ commander.maximum } bots!`)
       return
@@ -407,7 +393,7 @@ let commands = {
       return
     }
 
-    let server = await link.server()
+    let server = link.server()
     let bots = commander.connectServer(server, amount.integer(1), bot => {
       bot.status = 0
       let ws = bot.socket
@@ -450,7 +436,7 @@ let commands = {
       return
     }
 
-    let server = await link.server()
+    let server = link.server()
     let bots = commander.connectServer(server, 1, bot => {
       bot.status = 0
       let ws = bot.socket
@@ -496,7 +482,7 @@ let commands = {
       return
     }
 
-    let server = await link.server()
+    let server = link.server()
     let bots = commander.connectServer(server, amount.integer(1), bot => {
       bot.status = 0
       let ws = bot.socket
@@ -560,7 +546,7 @@ let commands = {
       return
     }
 
-    let server = await link.server()
+    let server = link.server()
     let bots = commander.connectServer(server, amount.integer(1), bot => {
       let ws = bot.socket
       ws.on('open', () => {
@@ -698,7 +684,7 @@ let commands = {
       return
     }
 
-    let { ipv6, party, source } = await link.server()
+    let { id, party, source, ws } = link.server()
 
     let found = {}
     let sockets = []
@@ -717,13 +703,13 @@ let commands = {
         exit()
         return
       }
-      let alloc = ipAlloc.for(ipv6)
+      let alloc = ipAlloc.for(id)
       if (!alloc) {
         msg.reply('Note: ran out of IPs!')
         exit()
         return
       }
-      let ws = new IRWSocket(`ws://[${ ipv6 }]:443`, alloc)
+      let ws = new IRWSocket(ws, alloc)
       ws.on('open', () => {
         ws.send().vu(5).done()
         ws.send().vu(0).string(BUILD).string('').string('').string('').done()
@@ -834,15 +820,16 @@ let execCommand = (msg, argsString) => {
     integer(minimum = -Infinity, maximum = Infinity) {
       return Math.min(maximum, Math.max(minimum, Math.floor(+this.toString()) || 0))
     },
-    async server() {
+    server() {
       let { id, party, source } = linkParse(this.toString())
       if (!id)
         throw new Error('Missing server ID!')
-      let server = await findServer(id)
-      server.id = id
-      server.party = party
-      server.source = source
-      return server
+      return {
+        id,
+        party,
+        source,
+        ws: `wss://${ id }.s.m28n.net`
+      }
     },
     async regionServer() {
       let [region, mode] = this.toString().split(':')
