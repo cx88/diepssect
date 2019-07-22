@@ -20,6 +20,7 @@ const IRWSocket = class extends EventEmitter {
     let socket = new WebSocket(address, {
       origin: address.startsWith('wss') ? 'https://diep.io' : 'http://diep.io',
       localAddress: ip,
+      family: 6,
       rejectUnauthorized: false,
     })
     socket.on('open', () => {
