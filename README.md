@@ -58,6 +58,7 @@ Many packets are already completely deciphered. Some packet types have a known s
 | `07` | extension found | Structured |
 | `08` | clear death     | Done       |
 | `09` | take tank       | Done       |
+| `0a` | pow result      | Done       |
 
 Serverbound packets are generally easy to dissect, most having few if any arguments. The only exception to this is the `01` packet, which is in the following format: `01 vu(flags) vf(mouseX) vf(mouseY) (vx(movementX) vy(movementY))?`
 
@@ -92,6 +93,7 @@ Note that the movement arguments are only added when using gamepads.
 | `08` | achievements      | Structured |
 | `09` | invalid link      | Done       |
 | `0a` | player count      | Done       |
+| `0b` | pow request       | Done       |
 
 Although most clientbound packets are as easy as the serverside packets. There are two main extremely complicated ones, `00` and `02`, which I'll explain in [`CLIENTBOUND.md`](CLIENTBOUND.md).
 
